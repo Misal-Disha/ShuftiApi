@@ -30,8 +30,8 @@ public class AMLService {
 
         String payload = "{"
                 + "\"reference\": \"SP_REQUEST_" + (int)(Math.random() * 10000) + "\","
-                + "\"callback_url\": \"http://13.235.24.189:8080/api/callback\","
-                + "\"redirect_url\": \"http://13.235.24.189:8080/api/redirect\","
+                + "\"callback_url\": \"shufti.flairminds.com/api/callback\","
+                + "\"redirect_url\": \"shufti.flairminds.com/api/redirect\","
                 + "\"country\": \"GB\","
                 + "\"language\": \"EN\","
                 + "\"verification_mode\": \"any\","
