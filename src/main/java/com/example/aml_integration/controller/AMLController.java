@@ -32,7 +32,6 @@ public class AMLController {
     @PostMapping("/check")
     public ResponseEntity<String> performAMLCheck(@RequestBody String requestData) {
         System.out.println("AML check request received: " + requestData);
-        // Process the request data
         return ResponseEntity.ok("AML check processed successfully");
     }
 }
