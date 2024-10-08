@@ -53,17 +53,18 @@ public class AMLService {
                 + "}"
                 + "}";
 
-//        // Send post request
-//        con.setDoOutput(true);
-//        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-//        wr.writeBytes(payload);
-//        wr.flush();
-//        wr.close();
+        payload = requestData;
+        // Send post request
         con.setDoOutput(true);
-        try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
-            wr.writeBytes(requestData);
-            wr.flush();
-        }
+        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+        wr.writeBytes(payload);
+        wr.flush();
+        wr.close();
+//        con.setDoOutput(true);
+//        try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
+//            wr.writeBytes(requestData);
+//            wr.flush();
+//        }
         
 
         int responseCode = con.getResponseCode();
