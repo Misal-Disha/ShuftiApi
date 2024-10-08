@@ -18,21 +18,21 @@ public class AMLController {
     @Autowired
     private AMLService amlService;
 
-    @GetMapping("/check")
-    public ResponseEntity<String> performAMLCheck() {
-        try {
-            String result = amlService.performAMLCheck();
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Error occurred while performing AML check");
-        }
-    }
+//    @GetMapping("/check")
+//    public ResponseEntity<String> performAMLCheck() {
+//        try {
+//            String result = amlService.performAMLCheck();
+//            return ResponseEntity.ok(result);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(500).body("Error occurred while performing AML check");
+//        }
+//    }
     
     @PostMapping("/check")
     public ResponseEntity<String> performAMLCheck(@RequestBody String requestData) throws Exception {
         System.out.println("AML check request received: " + requestData);
-        String result = amlService.performAMLCheck();
+        String result = amlService.performAMLCheck(requestData);
         System.out.println(result);
         return ResponseEntity.ok("AML check processed successfully");
     }

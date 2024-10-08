@@ -2,6 +2,7 @@ package com.example.aml_integration.service;
 
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -15,7 +16,7 @@ import javax.net.ssl.HttpsURLConnection;
 @Service
 public class AMLService {
 
-    public String performAMLCheck() throws Exception {
+    public String performAMLCheck(@RequestBody String requestData) throws Exception {
         String url = "https://api.shuftipro.com/";
         String CLIENT_ID = "8dfed603060c6178da6e2e942a234ddb2197fe85b5bdcf860387cb82f6d76189";
         String SECRET_KEY = "AttoaKNQX1JcbATAHn40OqFNMFjBvsrI";
@@ -52,12 +53,18 @@ public class AMLService {
                 + "}"
                 + "}";
 
-        // Send post request
+//        // Send post request
+//        con.setDoOutput(true);
+//        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+//        wr.writeBytes(payload);
+//        wr.flush();
+//        wr.close();
         con.setDoOutput(true);
-        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-        wr.writeBytes(payload);
-        wr.flush();
-        wr.close();
+        try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
+            wr.writeBytes(requestData);
+            wr.flush();
+        }
+        
 
         int responseCode = con.getResponseCode();
         System.out.println("\nSending 'POST' request to URL : " + url);
