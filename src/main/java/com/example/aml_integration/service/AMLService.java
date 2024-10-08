@@ -19,7 +19,7 @@ public class AMLService {
     public String performAMLCheck(@RequestBody String requestData) throws Exception {
         String url = "https://api.shuftipro.com/";
         String CLIENT_ID = "8dfed603060c6178da6e2e942a234ddb2197fe85b5bdcf860387cb82f6d76189";
-        String SECRET_KEY = "AttoaKNQX1JcbATAHn40OqFNMFjBvsrI";
+        String SECRET_KEY = "6RsGbP8O3gpYEdvcuJcZGmQS2Vf6mhMp";
         URL obj = new URL(url);
         HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
 
