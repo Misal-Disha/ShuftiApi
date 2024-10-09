@@ -16,7 +16,7 @@ import javax.net.ssl.HttpsURLConnection;
 @Service
 public class AMLService {
 
-    public String performAMLCheck(@RequestBody String requestData) throws Exception {
+    public String performAMLCheck() throws Exception {
         String url = "https://api.shuftipro.com/";
         String CLIENT_ID = "8dfed603060c6178da6e2e942a234ddb2197fe85b5bdcf860387cb82f6d76189";
         String SECRET_KEY = "6RsGbP8O3gpYEdvcuJcZGmQS2Vf6mhMp";
@@ -43,9 +43,9 @@ public class AMLService {
                 + "    \"ongoing\": \"0\","
                 + "    \"match_score\": 100,"
                 + "    \"name\": {"
-                + "        \"first_name\": \" \","
-                + "        \"middle_name\": \" \","
-                + "        \"last_name\": \" \""
+                + "        \"first_name\": \"John \","
+                + "        \"middle_name\": \" A\","
+                + "        \"last_name\": \" Doe\""
                 + "    },"
                 + "    \"dob\": \"1955-07-26\","
                 + "    \"countries\": [\"pk\", \"cy\"],"
