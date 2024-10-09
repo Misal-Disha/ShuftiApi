@@ -53,7 +53,6 @@ public class AMLService {
                 + "}"
                 + "}";
 
-        payload = requestData;
         // Send post request
         con.setDoOutput(true);
         DataOutputStream wr = new DataOutputStream(con.getOutputStream());
