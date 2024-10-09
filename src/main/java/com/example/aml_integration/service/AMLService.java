@@ -31,8 +31,8 @@ public class AMLService {
 
         String payload = "{"
                 + "\"reference\": \"SP_REQUEST_" + (int)(Math.random() * 10000) + "\","
-                + "\"callback_url\": \"Devshuftipro.flairminds.com/api/callback\","
-                + "\"redirect_url\": \"Devshuftipro.flairminds.com/api/redirect\","
+                + "\"callback_url\": \"Devshuftipro.flairminds.com/api/aml/callback\","
+                + "\"redirect_url\": \"Devshuftipro.flairminds.com/api/aml/redirect\","
                 + "\"country\": \"GB\","
                 + "\"language\": \"EN\","
                 + "\"verification_mode\": \"any\","
@@ -52,6 +52,7 @@ public class AMLService {
                 + "    \"filters\": [\"sanction\", \"fitness-probity\", \"warning\", \"pep\"]"
                 + "}"
                 + "}";
+        
 
         // Send post request
         con.setDoOutput(true);
