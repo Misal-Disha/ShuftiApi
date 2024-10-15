@@ -1,5 +1,6 @@
 package com.example.aml_integration.controller;
 
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,17 +18,6 @@ public class AMLController {
 
     @Autowired
     private AMLService amlService;
-
-//    @GetMapping("/check")
-//    public ResponseEntity<String> performAMLCheck() {
-//        try {
-//            String result = amlService.performAMLCheck();
-//            return ResponseEntity.ok(result);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.status(500).body("Error occurred while performing AML check");
-//        }
-//    }
     
     @PostMapping("/check")
     public ResponseEntity<String> performAMLCheck(@RequestBody String requestData) throws Exception {
@@ -37,10 +27,26 @@ public class AMLController {
         return ResponseEntity.ok("AML check processed successfully");
     }
     
-    @GetMapping("/callback")
-    public void handleCallback(@RequestBody String requestData) {
+//    @GetMapping("/callback")
+//    public void handleCallback(@RequestBody String requestData) {
+//        System.out.println("Callback received: " + requestData);
+////        return ResponseEntity.ok("Callback received successfully");
+//        
+//    }
+    
+    @PostMapping("/callback")
+    public ResponseEntity<String> handleCallback(@RequestBody Map<String, Object> requestData) {
         System.out.println("Callback received: " + requestData);
-//        return ResponseEntity.ok("Callback received successfully");
+
+        String reference = (String) requestData.get("reference");
+        String event = (String) requestData.get("event");
+        String verificationStatus = (String) requestData.get("verification_status");
+        
+        System.out.println("Reference: " + reference);
+        System.out.println("Event: " + event);
+        System.out.println("Verification Status: " + verificationStatus);
+
+        return ResponseEntity.ok("Callback received and processed successfully");
     }
 
     @GetMapping("/redirect")
