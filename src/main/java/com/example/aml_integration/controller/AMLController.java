@@ -1,5 +1,6 @@
 package com.example.aml_integration.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,27 +28,56 @@ public class AMLController {
         return ResponseEntity.ok("AML check processed successfully");
     }
     
-//    @GetMapping("/callback")
-//    public void handleCallback(@RequestBody String requestData) {
+//    @PostMapping("/callback")
+//    public ResponseEntity<String> handleCallback(@RequestBody Map<String, Object> requestData) {
 //        System.out.println("Callback received: " + requestData);
-////        return ResponseEntity.ok("Callback received successfully");
+//
+//        String reference = (String) requestData.get("reference");
+//        String event = (String) requestData.get("event");
+//        String verificationStatus = (String) requestData.get("verification_status");
 //        
+//        System.out.println("Reference: " + reference);
+//        System.out.println("Event: " + event);
+//        System.out.println("Verification Status: " + verificationStatus);
+//
+//        return ResponseEntity.ok("Callback response received!");
 //    }
     
     @PostMapping("/callback")
     public ResponseEntity<String> handleCallback(@RequestBody Map<String, Object> requestData) {
         System.out.println("Callback received: " + requestData);
 
+        // Extract main fields
         String reference = (String) requestData.get("reference");
         String event = (String) requestData.get("event");
-        String verificationStatus = (String) requestData.get("verification_status");
-        
+        String country = (String) requestData.get("country");
+
+        // Extract nested fields from verification_data -> background_checks -> name
+        Map<String, Object> verificationData = (Map<String, Object>) requestData.get("verification_data");
+        Map<String, Object> backgroundChecks = (Map<String, Object>) verificationData.get("background_checks");
+        Map<String, Object> nameData = (Map<String, Object>) backgroundChecks.get("name");
+
+        String firstName = (String) nameData.get("first_name");
+        String lastName = (String) nameData.get("last_name");
+        String dob = (String) backgroundChecks.get("dob");
+
+        // Extract declined reason and codes
+        String declinedReason = (String) requestData.get("declined_reason");
+        List<String> declinedCodes = (List<String>) requestData.get("declined_codes");
+
+        // Print extracted data
         System.out.println("Reference: " + reference);
         System.out.println("Event: " + event);
-        System.out.println("Verification Status: " + verificationStatus);
+        System.out.println("Country: " + country);
+        System.out.println("First Name: " + firstName);
+        System.out.println("Last Name: " + lastName);
+        System.out.println("DOB: " + dob);
+        System.out.println("Declined Reason: " + declinedReason);
+        System.out.println("Declined Codes: " + declinedCodes);
 
         return ResponseEntity.ok("Callback received and processed successfully");
     }
+
 
     @GetMapping("/redirect")
     public void handleRedirect(@RequestBody String requestData) {
