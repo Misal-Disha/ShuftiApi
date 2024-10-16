@@ -47,12 +47,10 @@ public class AMLController {
     public ResponseEntity<String> handleCallback(@RequestBody Map<String, Object> requestData) {
         System.out.println("Callback received: " + requestData);
 
-        // Extract main fields
         String reference = (String) requestData.get("reference");
         String event = (String) requestData.get("event");
         String country = (String) requestData.get("country");
 
-        // Extract nested fields from verification_data -> background_checks -> name
         Map<String, Object> verificationData = (Map<String, Object>) requestData.get("verification_data");
         Map<String, Object> backgroundChecks = (Map<String, Object>) verificationData.get("background_checks");
         Map<String, Object> nameData = (Map<String, Object>) backgroundChecks.get("name");
