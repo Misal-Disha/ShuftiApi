@@ -74,7 +74,7 @@ public class AMLController {
         String event = (String) requestData.get("event");
         String country = (String) requestData.get("country");
 
-        // Extract verification data
+        // Extract verification data dynamically
         Map<String, Object> verificationData = (Map<String, Object>) requestData.get("verification_data");
         Map<String, Object> backgroundChecks = (Map<String, Object>) verificationData.get("background_checks");
         Map<String, Object> nameData = (Map<String, Object>) backgroundChecks.get("name");
@@ -90,8 +90,8 @@ public class AMLController {
 
         response.put("reference", maskedReference);
         response.put("event", event);
-        response.put("country", null);  // Set country to null as per your requirement
-
+        response.put("country", country);  
+        
         // Proofs section
         Map<String, Object> proofs = new HashMap<>();
         proofs.put("verification_report", "https://ns.shuftipro.com/api/pea/****************************");
@@ -104,39 +104,18 @@ public class AMLController {
 
         amlData.put("filters", Arrays.asList("sanction", "warning", "fitness-probity", "pep", "pep-class-1", "pep-class-2", "pep-class-3", "pep-class-4"));
 
-        // Create the hits array dynamically
-        List<Map<String, Object>> hits = new ArrayList<>();
-
-        // Populate hits with dynamic data
-        hits.add(createHit("John Dew", "1952-05-03", firstName, lastName));
-        hits.add(createHit("John Dow", null, firstName, lastName, 
-            new String[][] {
-                {"Address", "c/o Kingsbridge Corporate Solutions, Business Hive, 13 Dudley Street, Grimsby, NorthEast Lincolnshire DN31 2AW"},
-                {"Company Name", "J A DOW JOINERY & MANUFACTURERS LIMITED"},
-                {"Designation", "Director"}
-            }));
-        hits.add(createHit("John Dow", "2022-11-05", firstName, lastName, 
-            new String[][] {
-                {"Address", "56 Warwick Road   SCUNTHORPE DN16 1EZ"},
-                {"Date Of Death", "2022-11-05"}
-            }));
-        hits.add(createHit("The John Townsend Trust", null, firstName, lastName, 
-            new String[][] {
-                {"Company Number", "06769267"}
-            }));
+        // Create the hits array dynamically from requestData
+        List<Map<String, Object>> hits = createHitsFromBackgroundChecks(backgroundChecks);
 
         amlData.put("hits", hits);
         verificationResponse.put("aml_data", amlData);
-        verificationData.put("background_checks", backgroundChecks);
         response.put("verification_data", verificationResponse);
 
         // Other sections
         Map<String, Object> info = new HashMap<>();
-        Map<String, Object> agent = new HashMap<>();
-        agent.put("is_desktop", false);
-        agent.put("is_phone", false);
-        agent.put("useragent", "PostmanRuntime/7.37.3");
-        info.put("agent", agent);
+        Map<String, Object> agent = (Map<String, Object>) requestData.get("agent"); // Dynamically use agent data from request
+        info.put("agent", agent != null ? agent : getDefaultAgentInfo());
+
         response.put("info", info);
 
         // Log the response for debugging
@@ -145,49 +124,51 @@ public class AMLController {
         return ResponseEntity.ok(response);
     }
 
-    private Map<String, Object> createHit(String name, String dateOfBirth, String firstName, String lastName) {
-        return createHit(name, dateOfBirth, firstName, lastName, null);
-    }
+    private List<Map<String, Object>> createHitsFromBackgroundChecks(Map<String, Object> backgroundChecks) {
+        List<Map<String, Object>> hits = new ArrayList<>();
 
-    private Map<String, Object> createHit(String name, String dateOfBirth, String firstName, String lastName, String[][] additionalFields) {
-        Map<String, Object> hit = new HashMap<>();
-        hit.put("name", name);
-        hit.put("entity_type", null);
-        hit.put("score", "");
-        hit.put("match_types", Arrays.asList("category", "country", "entity_type", "profile_name"));
-        hit.put("alternative_names", new ArrayList<>());
-        hit.put("assets", new ArrayList<>());
-        hit.put("associates", new ArrayList<>());
+        // Iterate over background checks and dynamically create hits based on available data
+        List<Map<String, Object>> names = (List<Map<String, Object>>) backgroundChecks.get("names");
+        if (names != null) {
+            for (Map<String, Object> name : names) {
+                Map<String, Object> hit = new HashMap<>();
+                String firstName = (String) name.get("first_name");
+                String lastName = (String) name.get("last_name");
 
-        Map<String, Object> fields = new HashMap<>();
+                hit.put("name", firstName + " " + lastName);
+                hit.put("entity_type", name.get("entity_type"));
+                hit.put("score", name.get("score"));
+                hit.put("match_types", name.get("match_types"));
 
-        // Common fields
-        fields.put("First Name", Collections.singletonList(Map.of("value", firstName, "source", "", "tag", "first_name")));
-        fields.put("Last Name", Collections.singletonList(Map.of("value", lastName, "source", "", "tag", "last_name")));
+                // Extract fields dynamically
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("Country", extractField(backgroundChecks, "country", "tag"));
+                fields.put("Date Of Birth", extractField(backgroundChecks, "date_of_birth", "tag"));
 
-        // Date of Birth if available
-        if (dateOfBirth != null) {
-            fields.put("Date Of Birth", Collections.singletonList(Map.of("value", dateOfBirth, "source", "", "tag", "date_of_birth")));
-        }
-
-        // Add additional fields dynamically
-        if (additionalFields != null) {
-            for (String[] fieldData : additionalFields) {
-                String fieldName = fieldData[0];
-                String fieldValue = fieldData[1];
-                fields.put(fieldName, Collections.singletonList(Map.of("value", fieldValue, "source", "", "tag", fieldName.toLowerCase().replaceAll(" ", "_"))));
+                hit.put("fields", fields);
+                hits.add(hit);
             }
         }
 
-        hit.put("fields", fields);
-        hit.put("media", new ArrayList<>());
-        hit.put("source_notes", new HashMap<>());
-        hit.put("sources", Arrays.asList("ShuftiPro Internal Database", "Wikidata"));
-        hit.put("types", new ArrayList<>());
-
-        return hit;
+        return hits;
     }
 
+    private Map<String, Object> extractField(Map<String, Object> backgroundChecks, String fieldName, String tag) {
+        Map<String, Object> field = new HashMap<>();
+        field.put("value", backgroundChecks.get(fieldName));
+        field.put("source", "");
+        field.put("tag", tag);
+        return field;
+    }
+
+    private Map<String, Object> getDefaultAgentInfo() {
+        Map<String, Object> agent = new HashMap<>();
+        agent.put("is_desktop", false);
+        agent.put("is_phone", false);
+        agent.put("useragent", "PostmanRuntime/7.37.3");
+        return agent;
+    }
+    
 
 
 
