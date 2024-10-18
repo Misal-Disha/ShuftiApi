@@ -132,24 +132,25 @@ public class AMLController {
     private List<Map<String, Object>> createHitsFromBackgroundChecks(Map<String, Object> backgroundChecks) {
         List<Map<String, Object>> hits = new ArrayList<>();
 
+        // Safely extract name data
         Map<String, Object> nameData = (Map<String, Object>) backgroundChecks.get("name");
         if (nameData != null) {
             String firstName = (String) nameData.get("first_name");
             String middleName = (String) nameData.get("middle_name");
             String lastName = (String) nameData.get("last_name");
-            String entityType = (String) nameData.get("entity_type");  // Extract entity_type dynamically
+            String entityType = (String) nameData.get("entity_type"); // Extract entity_type dynamically
 
-            // Construct the full name dynamically, ensuring middle name is included if present
-            String fullName = firstName;
+            // Construct the full name dynamically
+            StringBuilder fullNameBuilder = new StringBuilder(firstName != null ? firstName : "");
             if (middleName != null && !middleName.isEmpty()) {
-                fullName += " " + middleName;  // Add middle name if present
+                fullNameBuilder.append(" ").append(middleName); // Add middle name if present
             }
-            fullName += " " + lastName;  // Append last name
+            fullNameBuilder.append(" ").append(lastName != null ? lastName : ""); // Append last name
 
             // Create hit data
             Map<String, Object> hit = new HashMap<>();
-            hit.put("name", fullName);
-            hit.put("entity_type", entityType);  
+            hit.put("name", fullNameBuilder.toString().trim());
+            hit.put("entity_type", entityType != null ? entityType : "");  // Avoid null for entity_type
             hit.put("score", "");
             hit.put("match_types", Arrays.asList("category", "country", "entity_type", "profile_name"));
 
@@ -159,14 +160,34 @@ public class AMLController {
             // Make the country field dynamic
             String country = (String) backgroundChecks.get("country");
             if (country != null && !country.isEmpty()) {
-                fields.put("Country", Collections.singletonList(Map.of("value", country, "source", "", "tag", "country")));
+                fields.put("Country", Collections.singletonList(Map.of(
+                    "value", country,
+                    "source", "",
+                    "tag", "country"
+                )));
             }
 
             // Other dynamic fields (DOB, First Name, Middle Name, Last Name)
-            fields.put("Date Of Birth", Collections.singletonList(Map.of("value", backgroundChecks.get("dob"), "source", "", "tag", "date_of_birth")));
-            fields.put("First Name", Collections.singletonList(Map.of("value", firstName, "source", "", "tag", "first_name")));
-            fields.put("Middle Name", Collections.singletonList(Map.of("value", middleName, "source", "", "tag", "middle_name")));
-            fields.put("Last Name", Collections.singletonList(Map.of("value", lastName, "source", "", "tag", "last_name")));
+            fields.put("Date Of Birth", Collections.singletonList(Map.of(
+                "value", backgroundChecks.get("dob"),
+                "source", "",
+                "tag", "date_of_birth"
+            )));
+            fields.put("First Name", Collections.singletonList(Map.of(
+                "value", firstName != null ? firstName : "", // Handle potential null
+                "source", "",
+                "tag", "first_name"
+            )));
+            fields.put("Middle Name", Collections.singletonList(Map.of(
+                "value", middleName != null ? middleName : "", // Handle potential null
+                "source", "",
+                "tag", "middle_name"
+            )));
+            fields.put("Last Name", Collections.singletonList(Map.of(
+                "value", lastName != null ? lastName : "", // Handle potential null
+                "source", "",
+                "tag", "last_name"
+            )));
 
             hit.put("fields", fields);
             hits.add(hit);
@@ -174,6 +195,7 @@ public class AMLController {
 
         return hits;
     }
+
 
 
 
