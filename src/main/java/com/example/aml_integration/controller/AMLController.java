@@ -150,7 +150,7 @@ public class AMLController {
             Map<String, Object> hit = new HashMap<>();
             hit.put("name", fullName);
             hit.put("entity_type", entityType);  
-            hit.put("score", "");  // Assuming score is not provided, keeping it empty
+            hit.put("score", "");
             hit.put("match_types", Arrays.asList("category", "country", "entity_type", "profile_name"));
 
             // Fields for the hit, including dynamic Country extraction
