@@ -231,6 +231,8 @@ public class AMLController {
         
         // Fetch detailed response from ShuftiPro API (e.g., using the reference)
         Map<String, Object> detailedResponse = fetchDetailedHitsFromShufti(reference);
+        System.out.println("Detailed response with status api");
+        System.out.println(detailedResponse);
 
         // Process AML data with null-safe extraction of filters and hits
         Map<String, Object> verificationResponse = new HashMap<>();
