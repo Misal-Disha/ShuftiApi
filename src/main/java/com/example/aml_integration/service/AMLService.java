@@ -2,6 +2,7 @@ package com.example.aml_integration.service;
 
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -14,6 +15,12 @@ import javax.net.ssl.HttpsURLConnection;
 
 @Service
 public class AMLService {
+	
+	public final RestTemplate restTemplate;
+	
+	public AMLService(RestTemplate restTemplate) {
+		this.restTemplate = restTemplate;
+	}
 
 	public String performAMLCheck() throws Exception {
 	    String url = "https://api.shuftipro.com/";
@@ -45,7 +52,7 @@ public class AMLService {
 	            + "        \"middle_name\": \"\","
 	            + "        \"last_name\": \"Modi\""
 	            + "    },"
-	            + "    \"dob\": \"2003-02-27\","
+	            + "    \"dob\": \"1996-11-09\","
 	            + "    \"filters\": [\"sanction\", \"fitness-probity\", \"warning\", \"pep\",\"pep-class-1\",\"pep-class-2\",\"pep-class-3\",\"pep-class-4\"]"
 	            + "}"
 	            + "}";
