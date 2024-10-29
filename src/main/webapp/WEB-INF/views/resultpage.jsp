@@ -37,6 +37,21 @@
             width: 1em;
             margin-left: -1em;
         }
+        .list-inline {
+	        display: flex;
+	        flex-wrap: wrap;
+	        gap: 10px; /* Optional: spacing between items */
+	        list-style-type: none;
+	        padding: 0;
+	        margin: 0;
+	    }
+	    .list-inline li {
+	        background: #f0f0f0; /* Optional: background color for items */
+	        padding: 10px;
+	        border-radius: 5px;
+	        text-align: left;
+	    }
+        
     </style>
 </head>
 
@@ -58,11 +73,21 @@
 
             <div>
 			    <h5>Individual AML Screening Verification</h5>
-			    <ul class="verification-details list-unstyled">
-			        <c:forEach var="filter" items="${filters}">
-			            <li>✔${filter}</li>
-			        </c:forEach>
-			    </ul>
+			    <c:choose>
+				       <c:when test="${not empty filters}">
+				           <div class="list-inline">
+				                <li>&check; ${filters[0]}</li>
+				                <li>&check; ${filters[1]}</li>
+				                <li>&check; ${filters[2]}</li>
+				                <li>&check; ${filters[3]}</li>
+				                <li>&check; ${filters[4]}</li>
+				                <li>&check; ${filters[5]}</li>
+				                <li>&check; ${filters[6]}</li>
+				                <li>&check; ${filters[7]}</li>
+				                <li>&check; ${filters[8]}</li>
+				           </div>
+				       </c:when>
+			   </c:choose>
 			</div>
 
             <div>

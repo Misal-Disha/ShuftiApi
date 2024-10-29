@@ -97,26 +97,91 @@
             margin-bottom: 10px;
             font-weight: 600;
         }
-        .yellow-dot {
+		.yellow-dot {
+	        height: 10px;
+	        width: 10px;
+	        background-color: #ffc107; /* Bootstrap's warning color */
+	        border-radius: 50%;
+	        display: inline-block;
+	        margin-right: 5px;
+	        vertical-align: middle;
+	    }
+	    .list-inline {
+	        display: flex;
+	        flex-wrap: wrap;
+	        gap: 10px; /* Optional: spacing between items */
+	        list-style-type: none;
+	        padding: 0;
+	        margin: 0;
+	    }
+	    .list-inline li {
+	        background: #f0f0f0; /* Optional: background color for items */
+	        padding: 10px;
+	        border-radius: 5px;
+	        text-align: left;
+	    }
+	    .aml-results-grid {
+		    display: flex;
+		    flex-wrap: wrap;
+		    gap: 20px; /* Space between cards */
+		}
+		
+		.aml-badge-red, .aml-badge-gray {
+		    display: inline-block;
+		    padding: 5px 10px;
+		    border-radius: 3px;
+		}
+		
+		.aml-badge-red {
+		    background-color: red;
+		    color: white;
+		}
+		
+		.aml-badge-gray {
+		    background-color: gray;
+		    color: white;
+		}
+		
+		.aml-inline-item {
+		    display: flex;
+		    align-items: center;
+		}
+		
+		.aml-dot {
 		    height: 10px;
 		    width: 10px;
-		    background-color: #ffc107; /* Bootstrap's warning color */
+		    background-color: green; /* Change as needed */
 		    border-radius: 50%;
-		    display: inline-block;
 		    margin-right: 5px;
-		    vertical-align: middle;
 		}
-        
+		.aml-results-container {
+	        display: flex;
+	        flex-wrap: wrap;
+	        gap: 16px; /* Adds space between boxes */
+	    }
+	
+	    .aml-result-box {
+	        flex: 1 1 calc(33.333% - 16px); /* Three items per row */
+	        box-sizing: border-box;
+	        border: 1px solid #ddd;
+	        padding: 16px;
+	        border-radius: 8px;
+	        background-color: #f9f9f9;
+	    }
+	
+	    .aml-result-title {
+	        font-weight: bold;
+	        margin-bottom: 8px;
+	    }
+	    
+	    
+
     </style>
     
     <script>
-        function showDetailedResults() {
-            document.getElementById('detailedResults').style.display = 'block';
-        }
-        function showAMLResults() {
+	    function showAMLResults() {
 	        document.getElementById('amlResults').style.display = 'block';
-	    }
-	    
+	    } 
     </script>
 </head>
 
@@ -152,63 +217,55 @@
 		    <button class="btn btn-primary float-end" onclick="showAMLResults()">View AML Results</button>
 		</div>
 		
-		<!-- First Row: Checks Performed -->
-		<div class="row">
-			<div class="col-md-12">
-			<h5>Checks Performed</h5>
-			<ul class="list-inline">
-			<% 
-			
-			                List<String> filters = (List<String>) request.getAttribute("filters");
-			
-			                if (filters != null) {
-			
-			                    for (String filter : filters) {
-			
-			            %>
-			<li class="list-inline-item">
-			<span class="status-success">✔</span> <%= filter != null ? filter : "N/A" %>
-			</li>
-			<% 
-			
-			                    }
-			
-			                } 
-			
-			            %>
-			</ul>
+			<!-- First Row: Checks Performed -->
+			<div class="info-box">
+			   <h5>Filters Applied</h5>
+			   <c:choose>
+			       <c:when test="${not empty filters}">
+			           <div class="list-inline">
+			                   <li>✔${filters[0]}</li>
+			                   <li>✔${filters[1]}</li>
+			                   <li>✔${filters[2]}</li>
+			                   <li>✔${filters[3]}</li>
+			                   <li>✔${filters[4]}</li>
+			                   <li>✔${filters[5]}</li>
+			                   <li>✔${filters[6]}</li>
+			                   <li>✔${filters[7]}</li>
+			                   <li>✔${filters[8]}</li>
+			           </div>
+			       </c:when>
+			   </c:choose>
 			</div>
+			
+			
+			
+			<!-- Second Row: Sources -->
+			<div class="info-box">
+			    <h5>Sources</h5>
+			    <div class="list-inline">
+			        		   <li>✔${sources[0]}</li>
+			                   <li>✔${sources[1]}</li>
+			                   <li>✔${sources[2]}</li>
+			                   <li>✔${sources[3]}</li>
+			                   <li>✔${sources[4]}</li>
+			                   <li>✔${sources[5]}</li>
+			                   <li>✔${sources[6]}</li>
+					    </div>
 			</div>
-
- 
-		
-		<!-- Second Row: Sources -->
-		<div class="row">
-		    <div class="col-md-12">
-		        <h5>Sources</h5>
-		        <ul class="list-inline">
-		            <c:forEach var="source" items="${sources}">
-		                <li class="list-inline-item">
-		                    <span class="status-success">✔</span> ${source}
-		                </li>
-		            </c:forEach>
-		        </ul>
-		    </div>
-		</div>
-		
-		<!-- Third Row: Found Alert (Categories) -->
-		<div class="row">
-		    <div class="col-md-12">
-		        <h5>Categories</h5>
-		        <ul class="list-inline">
-		            <c:forEach var="category" items="${categories}">
-		                <li class="list-inline-item">
-		                    <span class="yellow-dot"></span> ${category}
-		                </li>
-		            </c:forEach>
-		        </ul>
-		    </div>
-		</div>
+			
+			<!-- Third Row: Found Alert (Categories) -->
+			<div class="info-box">
+				<h5>Categories</h5>
+			    <div class="list-inline">
+			    	<li><span class="yellow-dot"></span> ${categories[0]}</li>
+			        <li><span class="yellow-dot"></span> ${categories[1]}</li>
+			        <li><span class="yellow-dot"></span> ${categories[2]}</li>
+			        <li><span class="yellow-dot"></span> ${categories[3]}</li>
+			        <li><span class="yellow-dot"></span> ${categories[4]}</li>
+			        <li><span class="yellow-dot"></span> ${categories[5]}</li>
+			        <li><span class="yellow-dot"></span> ${categories[6]}</li>
+			    </div>
+			</div>
 		
 	    
 		
@@ -216,38 +273,259 @@
 		    <div class="row">
 		        <div class="col-md-12">
 		            <h5>Match Status</h5>
-		            <p>Potential Match</p>
+		            <p><span class="yellow-dot"></span> Potential Match</p>
 		        </div>
 		    </div>
 		</div>
 
 
-		<!-- Detailed Results for Hits -->
-		<div id="amlResults" style="display: none; overflow-y: auto; max-height: 400px; margin-top: 20px;">
-		    <h5>AML Screening Detailed Results</h5>
-		    <c:forEach var="hit" items="${hits}">
-		        <div class="info-box">
-		            <div class="aml-screening-title">Potential Match | ${hit.matchPercentage}%</div>
-		            <p><strong>Name:</strong> ${hit.name}</p>
-		            <p><strong>Date of Birth:</strong> ${hit.dob}</p>
-		            <p><strong>Appears on:</strong> 
-		                <c:forEach var="list" items="${hit.appearsOn}">
-		                    <span class="badge bg-danger">${list}</span>
-		                </c:forEach>
-		            </p>
-		            <p><strong>Countries:</strong> 
-		                <c:forEach var="country" items="${hit.countries}">
-		                    <span class="badge bg-secondary">${country}</span>
-		                </c:forEach>
-		            </p>
-		            <p><strong>Relevance:</strong> 
-		                <c:forEach var="relevance" items="${hit.relevance}">
-		                    <span class="list-inline-item"><span class="yellow-dot"></span>${relevance}</span>
-		                </c:forEach>
-		            </p>
-		        </div>
-		    </c:forEach>
+		<div id="amlResults" class="aml-results-container">
+    		<h5>AML Screening Detailed Results</h5>
+		
+		    <c:choose>
+		        <!-- Display details for the first entry if available -->
+		        <c:when test="${not empty hits[0]}">
+		            <div class="aml-result-box">
+		                <div class="aml-result-title">Potential Match | ${hits[0].matchPercentage}%</div>
+		                <p><strong>Name:</strong> ${hits[0].name}</p>
+		                <p><strong>Date of Birth:</strong> ${hits[0].dob}</p>
+		                <p><strong>Appears on:</strong>
+		                    <c:choose>
+		                        <c:when test="${not empty hits[0].appearsOn[0]}">
+		                            <span class="aml-badge-red">${hits[0].appearsOn[0]}</span>
+		                        </c:when>
+		                        <c:when test="${not empty hits[0].appearsOn[1]}">
+		                            <span class="aml-badge-red">${hits[0].appearsOn[1]}</span>
+		                        </c:when>
+		                    </c:choose>
+		                </p>
+		                <p><strong>Countries:</strong>
+		                    <c:choose>
+		                        <c:when test="${not empty hits[0].countries[0]}">
+		                            <span class="aml-badge-gray">${hits[0].countries[0]}</span>
+		                        </c:when>
+		                        <c:when test="${not empty hits[0].countries[1]}">
+		                            <span class="aml-badge-gray">${hits[0].countries[1]}</span>
+		                        </c:when>
+		                    </c:choose>
+		                </p>
+		                <p><strong>Relevance:</strong>
+		                    <c:choose>
+		                        <c:when test="${not empty hits[0].relevance[0]}">
+		                            <span class="aml-inline-item"><span class="aml-dot"></span>${hits[0].relevance[0]}</span>
+		                        </c:when>
+		                        <c:when test="${not empty hits[0].relevance[1]}">
+		                            <span class="aml-inline-item"><span class="aml-dot"></span>${hits[0].relevance[1]}</span>
+		                        </c:when>
+		                    </c:choose>
+		                </p>
+		            </div>
+		        </c:when>
+		
+		        <!-- Repeat structure for other entries with updated class names -->
+		
+		        <!-- Display details for the second entry if available -->
+		        <c:when test="${not empty hits[1]}">
+		            <div class="aml-result-box">
+		                <div class="aml-result-title">Potential Match | ${hits[1].matchPercentage}%</div>
+		                <p><strong>Name:</strong> ${hits[1].name}</p>
+		                <p><strong>Date of Birth:</strong> ${hits[1].dob}</p>
+		                <p><strong>Appears on:</strong>
+		                    <c:choose>
+		                        <c:when test="${not empty hits[1].appearsOn[0]}">
+		                            <span class="aml-badge-red">${hits[1].appearsOn[0]}</span>
+		                        </c:when>
+		                        <c:when test="${not empty hits[1].appearsOn[1]}">
+		                            <span class="aml-badge-red">${hits[1].appearsOn[1]}</span>
+		                        </c:when>
+		                    </c:choose>
+		                </p>
+		                <p><strong>Countries:</strong>
+		                    <c:choose>
+		                        <c:when test="${not empty hits[1].countries[0]}">
+		                            <span class="aml-badge-gray">${hits[1].countries[0]}</span>
+		                        </c:when>
+		                        <c:when test="${not empty hits[1].countries[1]}">
+		                            <span class="aml-badge-gray">${hits[1].countries[1]}</span>
+		                        </c:when>
+		                    </c:choose>
+		                </p>
+		                <p><strong>Relevance:</strong>
+		                    <c:choose>
+		                        <c:when test="${not empty hits[1].relevance[0]}">
+		                            <span class="aml-inline-item"><span class="aml-dot"></span>${hits[1].relevance[0]}</span>
+		                        </c:when>
+		                        <c:when test="${not empty hits[1].relevance[1]}">
+		                            <span class="aml-inline-item"><span class="aml-dot"></span>${hits[1].relevance[1]}</span>
+		                        </c:when>
+		                    </c:choose>
+		                </p>
+		            </div>
+		        </c:when>
+		
+		        <!-- Repeat the above <c:when> structure for hits[2] to hits[5] as shown in the original code -->
+		
+		    </c:choose>
+		    
+		    <!-- Display details for the third entry if available -->
+			<c:when test="${not empty hits[2]}">
+			    <div class="aml-result-box">
+			        <div class="aml-result-title">Potential Match | ${hits[2].matchPercentage}%</div>
+			        <p><strong>Name:</strong> ${hits[2].name}</p>
+			        <p><strong>Date of Birth:</strong> ${hits[2].dob}</p>
+			        <p><strong>Appears on:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[2].appearsOn[0]}">
+			                    <span class="aml-badge-red">${hits[2].appearsOn[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[2].appearsOn[1]}">
+			                    <span class="aml-badge-red">${hits[2].appearsOn[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			        <p><strong>Countries:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[2].countries[0]}">
+			                    <span class="aml-badge-gray">${hits[2].countries[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[2].countries[1]}">
+			                    <span class="aml-badge-gray">${hits[2].countries[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			        <p><strong>Relevance:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[2].relevance[0]}">
+			                    <span class="aml-inline-item"><span class="aml-dot"></span>${hits[2].relevance[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[2].relevance[1]}">
+			                    <span class="aml-inline-item"><span class="aml-dot"></span>${hits[2].relevance[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			    </div>
+			</c:when>
+			
+			<!-- Display details for the fourth entry if available -->
+			<c:when test="${not empty hits[3]}">
+			    <div class="aml-result-box">
+			        <div class="aml-result-title">Potential Match | ${hits[3].matchPercentage}%</div>
+			        <p><strong>Name:</strong> ${hits[3].name}</p>
+			        <p><strong>Date of Birth:</strong> ${hits[3].dob}</p>
+			        <p><strong>Appears on:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[3].appearsOn[0]}">
+			                    <span class="aml-badge-red">${hits[3].appearsOn[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[3].appearsOn[1]}">
+			                    <span class="aml-badge-red">${hits[3].appearsOn[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			        <p><strong>Countries:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[3].countries[0]}">
+			                    <span class="aml-badge-gray">${hits[3].countries[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[3].countries[1]}">
+			                    <span class="aml-badge-gray">${hits[3].countries[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			        <p><strong>Relevance:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[3].relevance[0]}">
+			                    <span class="aml-inline-item"><span class="aml-dot"></span>${hits[3].relevance[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[3].relevance[1]}">
+			                    <span class="aml-inline-item"><span class="aml-dot"></span>${hits[3].relevance[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			    </div>
+			</c:when>
+			
+			<!-- Display details for the fifth entry if available -->
+			<c:when test="${not empty hits[4]}">
+			    <div class="aml-result-box">
+			        <div class="aml-result-title">Potential Match | ${hits[4].matchPercentage}%</div>
+			        <p><strong>Name:</strong> ${hits[4].name}</p>
+			        <p><strong>Date of Birth:</strong> ${hits[4].dob}</p>
+			        <p><strong>Appears on:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[4].appearsOn[0]}">
+			                    <span class="aml-badge-red">${hits[4].appearsOn[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[4].appearsOn[1]}">
+			                    <span class="aml-badge-red">${hits[4].appearsOn[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			        <p><strong>Countries:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[4].countries[0]}">
+			                    <span class="aml-badge-gray">${hits[4].countries[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[4].countries[1]}">
+			                    <span class="aml-badge-gray">${hits[4].countries[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			        <p><strong>Relevance:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[4].relevance[0]}">
+			                    <span class="aml-inline-item"><span class="aml-dot"></span>${hits[4].relevance[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[4].relevance[1]}">
+			                    <span class="aml-inline-item"><span class="aml-dot"></span>${hits[4].relevance[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			    </div>
+			</c:when>
+			
+			<!-- Display details for the sixth entry if available -->
+			<c:when test="${not empty hits[5]}">
+			    <div class="aml-result-box">
+			        <div class="aml-result-title">Potential Match | ${hits[5].matchPercentage}%</div>
+			        <p><strong>Name:</strong> ${hits[5].name}</p>
+			        <p><strong>Date of Birth:</strong> ${hits[5].dob}</p>
+			        <p><strong>Appears on:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[5].appearsOn[0]}">
+			                    <span class="aml-badge-red">${hits[5].appearsOn[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[5].appearsOn[1]}">
+			                    <span class="aml-badge-red">${hits[5].appearsOn[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			        <p><strong>Countries:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[5].countries[0]}">
+			                    <span class="aml-badge-gray">${hits[5].countries[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[5].countries[1]}">
+			                    <span class="aml-badge-gray">${hits[5].countries[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			        <p><strong>Relevance:</strong>
+			            <c:choose>
+			                <c:when test="${not empty hits[5].relevance[0]}">
+			                    <span class="aml-inline-item"><span class="aml-dot"></span>${hits[5].relevance[0]}</span>
+			                </c:when>
+			                <c:when test="${not empty hits[5].relevance[1]}">
+			                    <span class="aml-inline-item"><span class="aml-dot"></span>${hits[5].relevance[1]}</span>
+			                </c:when>
+			            </c:choose>
+			        </p>
+			    </div>
+			</c:when>
+		    
 		</div>
+		
+		
 		
 
 

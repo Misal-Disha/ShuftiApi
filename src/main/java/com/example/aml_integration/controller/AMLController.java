@@ -342,14 +342,11 @@ public class AMLController {
                     System.out.println("countries : "+ countries );
                     hit.put("countries", countries);
                     
-                    Map<String, Object> relevanceData = (Map<String, Object>) hitData.get("relevance");
-                    if (relevanceData != null) {
-                        List<String> matchTypes = (List<String>) relevanceData.get("match_types");
+                    List<String> matchTypes = (List<String>) hitData.get("match_types");
+                    if (matchTypes != null) {
                         hit.put("relevance", matchTypes);
-                        
-                        System.out.println("relevance : " +  matchTypes);
+                        System.out.println("relevance : " + matchTypes);
                     }
-                   
 
                     hits.add(hit);
                 }
