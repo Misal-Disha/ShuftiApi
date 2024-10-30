@@ -182,6 +182,11 @@
 	    function showAMLResults() {
 	        document.getElementById('amlResults').style.display = 'block';
 	    } 
+	    
+	    function openDetailedView(reference) {
+		    const url = `/api/aml/detailedamldeclined?reference=${reference}`;
+		    window.location.href = url;
+		}
     </script>
 </head>
 
@@ -285,7 +290,7 @@
 		    <c:choose>
 		        <!-- Display details for the first entry if available -->
 		        <c:when test="${not empty hits[0]}">
-		            <div class="aml-result-box">
+		           <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
 		                <div class="aml-result-title">Potential Match | ${hits[0].matchPercentage}%</div>
 		                <p><strong>Name:</strong> ${hits[0].name}</p>
 		                <p><strong>Date of Birth:</strong> ${hits[0].dob}</p>
@@ -322,11 +327,9 @@
 		            </div>
 		        </c:when>
 		
-		        <!-- Repeat structure for other entries with updated class names -->
-		
 		        <!-- Display details for the second entry if available -->
 		        <c:when test="${not empty hits[1]}">
-		            <div class="aml-result-box">
+		            <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
 		                <div class="aml-result-title">Potential Match | ${hits[1].matchPercentage}%</div>
 		                <p><strong>Name:</strong> ${hits[1].name}</p>
 		                <p><strong>Date of Birth:</strong> ${hits[1].dob}</p>
@@ -369,7 +372,7 @@
 		    
 		    <!-- Display details for the third entry if available -->
 			<c:when test="${not empty hits[2]}">
-			    <div class="aml-result-box">
+			    <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
 			        <div class="aml-result-title">Potential Match | ${hits[2].matchPercentage}%</div>
 			        <p><strong>Name:</strong> ${hits[2].name}</p>
 			        <p><strong>Date of Birth:</strong> ${hits[2].dob}</p>
@@ -408,7 +411,7 @@
 			
 			<!-- Display details for the fourth entry if available -->
 			<c:when test="${not empty hits[3]}">
-			    <div class="aml-result-box">
+			    <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
 			        <div class="aml-result-title">Potential Match | ${hits[3].matchPercentage}%</div>
 			        <p><strong>Name:</strong> ${hits[3].name}</p>
 			        <p><strong>Date of Birth:</strong> ${hits[3].dob}</p>
@@ -447,7 +450,7 @@
 			
 			<!-- Display details for the fifth entry if available -->
 			<c:when test="${not empty hits[4]}">
-			    <div class="aml-result-box">
+			    <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
 			        <div class="aml-result-title">Potential Match | ${hits[4].matchPercentage}%</div>
 			        <p><strong>Name:</strong> ${hits[4].name}</p>
 			        <p><strong>Date of Birth:</strong> ${hits[4].dob}</p>
@@ -486,7 +489,7 @@
 			
 			<!-- Display details for the sixth entry if available -->
 			<c:when test="${not empty hits[5]}">
-			    <div class="aml-result-box">
+			    <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
 			        <div class="aml-result-title">Potential Match | ${hits[5].matchPercentage}%</div>
 			        <p><strong>Name:</strong> ${hits[5].name}</p>
 			        <p><strong>Date of Birth:</strong> ${hits[5].dob}</p>
