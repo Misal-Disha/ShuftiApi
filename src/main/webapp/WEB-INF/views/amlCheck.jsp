@@ -25,7 +25,7 @@
             var requestData = JSON.stringify({ key: "value" });
 
             $.ajax({
-                url: "https://Devshuftipro.flairminds.com/api/aml/amlCheckPage",
+                url: "https://Devshuftipro.flairminds.com/api/aml/check",
                 type: "POST",
                 contentType: "application/json",
                 data: requestData,
