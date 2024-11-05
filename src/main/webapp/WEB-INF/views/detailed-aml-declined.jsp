@@ -272,7 +272,7 @@
         
     </div>
 </div>
-
+g
 <script>
         
         const hit = JSON.parse(sessionStorage.getItem('selectedHit'));
