@@ -1,12 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-
+ 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AML Check Result</title>
-
+ 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -177,19 +177,13 @@
 	    
 
     </style>
-    
-    <script>
-	    function showAMLResults() {
-	        document.getElementById('amlResults').style.display = 'block';
-	    } 
 	    
-	    function openDetailedView(reference) {
-		    const url = `/api/aml/detailedamldeclined?reference=${reference}`;
-		    window.location.href = url;
-		}
-    </script>
-</head>
-
+	    
+ 
+ 
+    
+    </head>
+ 
 <body>
     <div class="container">
         <!-- AML Check Result Header -->
@@ -197,7 +191,7 @@
             <div class="header">${declinedReason}</div>
 			<span class="declined-badge">Declined</span>
         </div>
-
+ 
         <!-- Reference and Browser Info -->
         <div class="info-box">
             <div class="info-title">Reference ID: ${reference}</div>
@@ -211,7 +205,7 @@
                 <span><strong>Browser:</strong> ${browser}</span>
             </div>
         </div>
-
+ 
         <!-- Individual AML Screening Verification -->
 		<div class="info-box">
 		    <div class="aml-screening-title">Individual AML Screening Verification</div>
@@ -282,15 +276,15 @@
 		        </div>
 		    </div>
 		</div>
-
-
-		<div id="amlResults" class="aml-results-container">
+ 
+ 
+		<div id="amlResults" class="aml-results-container" style="display: none;">
     		<h5>AML Screening Detailed Results</h5>
 		
 		    <c:choose>
 		        <!-- Display details for the first entry if available -->
 		        <c:when test="${not empty hits[0]}">
-		           <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
+		           <div class="aml-result-box" onclick="openDetailedView('${0}', '${hit.reference}');">
 		                <div class="aml-result-title">Potential Match | ${hits[0].matchPercentage}%</div>
 		                <p><strong>Name:</strong> ${hits[0].name}</p>
 		                <p><strong>Date of Birth:</strong> ${hits[0].dob}</p>
@@ -329,7 +323,7 @@
 		
 		        <!-- Display details for the second entry if available -->
 		        <c:when test="${not empty hits[1]}">
-		            <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
+		            <div class="aml-result-box" onclick="openDetailedView('${1}', '${hit.reference}');">
 		                <div class="aml-result-title">Potential Match | ${hits[1].matchPercentage}%</div>
 		                <p><strong>Name:</strong> ${hits[1].name}</p>
 		                <p><strong>Date of Birth:</strong> ${hits[1].dob}</p>
@@ -372,7 +366,7 @@
 		    
 		    <!-- Display details for the third entry if available -->
 			<c:when test="${not empty hits[2]}">
-			    <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
+			    <div class="aml-result-box" onclick="openDetailedView('${2}', '${hit.reference}');">
 			        <div class="aml-result-title">Potential Match | ${hits[2].matchPercentage}%</div>
 			        <p><strong>Name:</strong> ${hits[2].name}</p>
 			        <p><strong>Date of Birth:</strong> ${hits[2].dob}</p>
@@ -411,7 +405,7 @@
 			
 			<!-- Display details for the fourth entry if available -->
 			<c:when test="${not empty hits[3]}">
-			    <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
+			    <div class="aml-result-box" onclick="openDetailedView('${3}', '${hit.reference}');">
 			        <div class="aml-result-title">Potential Match | ${hits[3].matchPercentage}%</div>
 			        <p><strong>Name:</strong> ${hits[3].name}</p>
 			        <p><strong>Date of Birth:</strong> ${hits[3].dob}</p>
@@ -450,7 +444,7 @@
 			
 			<!-- Display details for the fifth entry if available -->
 			<c:when test="${not empty hits[4]}">
-			    <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
+			    <div class="aml-result-box" onclick="openDetailedView('${4}', '${hit.reference}');">
 			        <div class="aml-result-title">Potential Match | ${hits[4].matchPercentage}%</div>
 			        <p><strong>Name:</strong> ${hits[4].name}</p>
 			        <p><strong>Date of Birth:</strong> ${hits[4].dob}</p>
@@ -489,7 +483,7 @@
 			
 			<!-- Display details for the sixth entry if available -->
 			<c:when test="${not empty hits[5]}">
-			    <div class="aml-result-box" onclick="openDetailedView('${hit.reference}');">
+			    <div class="aml-result-box" onclick="openDetailedView('${5}', '${hit.reference}');">
 			        <div class="aml-result-title">Potential Match | ${hits[5].matchPercentage}%</div>
 			        <p><strong>Name:</strong> ${hits[5].name}</p>
 			        <p><strong>Date of Birth:</strong> ${hits[5].dob}</p>
@@ -530,14 +524,52 @@
 		
 		
 		
-
-
+ 
+ 
     </div>
-
+	
+	<script>
+		    function showAMLResults() {
+		        document.getElementById('amlResults').style.display = 'block';
+		    }
+		    
+		    function openDetailedView1(reference) {
+			    const url = `/api/aml/detailedamldeclined?reference=${reference}`;
+			    window.location.href = url;
+			}
+			
+			function openDetailedView(index, reference) {
+			    console.log("index:", index); // Log the index to the console.
+ 
+			    // Ensure hits is defined and valid. Assuming hits is an array available in the current scope.
+			   
+				// const hits = JSON.parse('${hitsJson.replace("'", "\\'")}');
+				
+				 const hitsJsonStr = '${hitsJson.replace("'", "\\'").replace("\\", "\\\\")}';
+				     console.log(hitsJsonStr); // Log to check if it's valid JSON
+				     const hits = JSON.parse(hitsJsonStr);
+				     console.log(hits);
+			    // Retrieve the specific hit based on the provided index.
+			    const hit = hits[index];
+			   	const url = `/api/aml/detailedamldeclined1?reference=${reference}`;
+			   	window.location.href = url; // Navigate to the new URL.
+			    console.log("hit:", hit);
+			    if (hit) {
+			        // Store the hit data in session storage.
+			        sessionStorage.setItem('selectedHit', JSON.stringify(hit));
+			        // Construct the URL to navigate to.
+			        const url = `/api/aml/detailedamldeclined1?reference=${reference}`;
+			        window.location.href = url; // Navigate to the new URL.
+			    } else {
+			        console.error("Invalid index or hit not found."); // Handle invalid index cases.
+			    }
+			}
+		
+	    </script>
+ 
+ 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-
+ 

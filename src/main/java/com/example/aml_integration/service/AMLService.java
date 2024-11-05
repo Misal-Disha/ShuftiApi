@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -56,16 +57,15 @@ public class AMLService {
 	            + "    \"filters\": [\"sanction\", \"fitness-probity\", \"warning\", \"pep\",\"pep-class-1\",\"pep-class-2\",\"pep-class-3\",\"pep-class-4\"]"
 	            + "}"
 	            + "}";
-
-
-	    // Send post request
+	    
+	 // Send post request
 	    con.setDoOutput(true);
 	    try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
 	        wr.writeBytes(payload);
 	        wr.flush();
 	    }
-
-	    // Handle the response
+	    
+	 // Handle the response
 	    int responseCode = con.getResponseCode();
 	    System.out.println("\nSending 'POST' request to URL : " + url);
 	    System.out.println("Payload : " + payload);
@@ -94,6 +94,72 @@ public class AMLService {
 
 	    // Return the response
 	    return response.toString();
+	    
+	    
+//	    StringBuilder payload = new StringBuilder();
+//	    payload.append("{")
+//	           .append("\"reference\": \"SP_REQUEST_").append((int)(Math.random() * 10000)).append("\",")
+//	           .append("\"callback_url\": \"https://Devshuftipro.flairminds.com/api/aml/callback\",")
+//	           .append("\"redirect_url\": \"https://Devshuftipro.flairminds.com/api/aml/redirect\",")
+//	           .append("\"language\": \"EN\",")
+//	           .append("\"verification_mode\": \"any\",")
+//	           .append("\"ttl\": 60,");
+//
+//	    // Background checks
+//	    payload.append("\"background_checks\": {")
+//	           .append("\"alias_search\": \"")
+//	           .append("\"rca_search\": \"")
+//	           .append("\"match_score\": 75")
+//	           .append("\"name\": {")
+//	           .append("\"first_name\": \"Nirav\",")
+//	           .append("\"middle_name\": \"\",")
+//	           .append("\"last_name\": \"Modi\"")
+//	           .append("},") 
+//	           .append("\"dob\": \"1996-11-09\",");
+//
+//	    // Construct the filters array
+//	    payload.append("\"filters\": [");
+//	    for (int i = 0; i < filters.size(); i++) {
+//	        payload.append("\"").append(filters.get(i)).append("\"");
+//	        if (i < filters.size() - 1) payload.append(",");
+//	    }
+//	    payload.append("]");
+//
+//	    payload.append("}}");
+//
+//	    con.setDoOutput(true);
+//	    try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
+//	        wr.writeBytes(payload.toString());
+//	        wr.flush();
+//	    }
+//	    
+//	 // Handle the response
+//	    int responseCode = con.getResponseCode();
+//	    System.out.println("\nSending 'POST' request to URL : " + url);
+//	    System.out.println("Payload : " + payload);
+//	    System.out.println("Response Code : " + responseCode);
+//
+//	    if (responseCode != 200) {
+//	        BufferedReader errorIn = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+//	        String inputLine;
+//	        StringBuilder errorResponse = new StringBuilder();
+//	        while ((inputLine = errorIn.readLine()) != null) {
+//	            errorResponse.append(inputLine);
+//	        }
+//	        errorIn.close();
+//	        throw new Exception("Error response from server: " + errorResponse.toString());
+//	    }
+//
+//	    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+//	    String inputLine;
+//	    StringBuilder response = new StringBuilder();
+//	    while ((inputLine = in.readLine()) != null) {
+//	        response.append(inputLine);
+//	    }
+//	    in.close();
+//
+//	    return response.toString();
+
 	}
 
 }

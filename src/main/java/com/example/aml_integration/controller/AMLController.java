@@ -1,5 +1,6 @@
 package com.example.aml_integration.controller;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +11,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -30,6 +38,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.example.aml_integration.service.AMLService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 
 @Controller  // Change from @RestController to @Controller
 @RequestMapping("/api/aml")
@@ -285,30 +294,30 @@ public class AMLController {
     public String showDeclinedVerification(@RequestParam("reference") String reference, Model model) {
         // Fetch detailed response using the reference
         Map<String, Object> detailedResponse = fetchDetailedHitsFromShufti(reference);
-
+ 
         // Add basic info to the model
         model.addAttribute("reference", detailedResponse.get("reference"));
         System.out.println("Reference: " + detailedResponse.get("reference"));
-
+ 
         model.addAttribute("event", detailedResponse.get("event"));
         System.out.println("Event: " + detailedResponse.get("event"));
-
+ 
         model.addAttribute("country", detailedResponse.get("country"));
         System.out.println("Country: " + detailedResponse.get("country"));
-
+ 
         // Extract verification data
         Map<String, Object> verificationData = (Map<String, Object>) detailedResponse.get("verification_data");
         if (verificationData != null) {
             Map<String, Object> backgroundChecks = (Map<String, Object>) verificationData.get("background_checks");
             if (backgroundChecks != null) {
                 Map<String, Object> nameData = (Map<String, Object>) backgroundChecks.get("name");
-
+ 
                 model.addAttribute("firstName", nameData.get("first_name"));
                 System.out.println("First Name: " + nameData.get("first_name"));
-
+ 
                 model.addAttribute("lastName", nameData.get("last_name"));
                 System.out.println("Last Name: " + nameData.get("last_name"));
-
+ 
                 model.addAttribute("dob", backgroundChecks.get("dob"));
                 System.out.println("DOB: " + backgroundChecks.get("dob"));
                 
@@ -316,17 +325,19 @@ public class AMLController {
                 List<String> filters = (List<String>) amlData.get("filters");
                 model.addAttribute("filters", filters);
                 System.out.println(filters);
-
+ 
                 List<Map<String, Object>> detailedChecks = (List<Map<String, Object>>) amlData.get("hits");
                 model.addAttribute("detailedChecks", detailedChecks);
                 
                 List<Map<String, Object>> hits = new ArrayList<>();
                 for (Map<String, Object> hitData : detailedChecks) {
-                    Map<String, Object> hit = new HashMap<>();
+                	Map<String, Object> hit = new HashMap<>();
                     hit.put("name", hitData.get("name"));
                     hit.put("matchPercentage", ((Double) hitData.get("score")) * 100);
                     hit.put("dob", backgroundChecks.get("dob"));
                     hit.put("appearsOn", hitData.get("types"));
+                    hit.put("entityType", hitData.get("entity_type"));
+
                     System.out.println("Appears on :" + hitData.get("types"));
                     
                     List<Map<String, Object>> sourceDetails = (List<Map<String, Object>>) hitData.get("source_details");
@@ -339,36 +350,151 @@ public class AMLController {
                             }
                         }
                     }
+                    
+                    Object fieldsObject = hitData.get("fields");
+                    if (fieldsObject instanceof Map) {
+                        Map<String, List<Map<String, Object>>> fields = (Map<String, List<Map<String, Object>>>) fieldsObject;
+
+                        // Check if fields contains "address" and "placeOf_birth" keys
+                        if (fields.containsKey("Address")) {
+                            // Extract address if available
+                            List<Map<String, Object>> addressList = fields.get("Address");
+                            if (addressList != null && !addressList.isEmpty()) {
+                                String address = (String) addressList.get(0).get("value"); // Take the first value for address
+                                model.addAttribute("address", address);
+                                hit.put("address", address);
+                                System.out.println("Address: " + address);
+                            } else {
+                                System.out.println("Address list is empty or null.");
+                            }
+                        } else {
+                            System.out.println("No 'address' key found in fields.");
+                        }
+
+                        if (fields.containsKey("Place Of Birth")) {
+                            // Extract place of birth if available
+                            List<Map<String, Object>> placeOfBirthList = fields.get("Place Of Birth");
+                            if (placeOfBirthList != null && !placeOfBirthList.isEmpty()) {
+                                String placeOfBirth = (String) placeOfBirthList.get(0).get("value"); // Take the first value for place of birth
+                                model.addAttribute("placeOfBirth", placeOfBirth);
+                                hit.put("placeOfBirth", placeOfBirth);
+                                System.out.println("Place of Birth: " + placeOfBirth);
+                            } else {
+                                System.out.println("Place of birth list is empty or null.");
+                            }
+                        } else {
+                            System.out.println("No 'placeOf_birth' key found in fields.");
+                        }
+                        
+                        List<Map<String, Object>> categoryList = fields.get("Category");
+                        if (categoryList != null && !categoryList.isEmpty()) {
+                            hit.put("category", categoryList.get(0).get("value"));
+                        }
+
+                        // Country and Nationality
+                        List<Map<String, Object>> countryList = fields.get("Country");
+                        if (countryList != null && !countryList.isEmpty()) {
+                            hit.put("country", countryList.get(0).get("value"));
+                        }
+
+                        List<Map<String, Object>> nationalityList = fields.get("Nationality");
+                        if (nationalityList != null && !nationalityList.isEmpty()) {
+                            hit.put("nationality", nationalityList.get(0).get("value"));
+                        }
+                        // Notes
+                        List<Map<String, Object>> notesList = fields.get("Notes");
+                        if (notesList != null && !notesList.isEmpty()) {
+                            hit.put("notes", notesList.get(0).get("value"));
+                        }
+                        
+                        List<Map<String, Object>> first_name = fields.get("First Name");
+                        if (notesList != null && !notesList.isEmpty()) {
+                            hit.put("first_name", first_name.get(0).get("value"));
+                        }
+                        
+                        List<Map<String, Object>> last_name = fields.get("Last Name");
+                        if (notesList != null && !notesList.isEmpty()) {
+                            hit.put("last_name", last_name.get(0).get("value"));
+                        }
+                    } 
+                    
+                    List<Map<String, Object>> associatesList = (List<Map<String, Object>>) hitData.get("associates");
+                    if (associatesList != null && !associatesList.isEmpty()) {
+                        List<String> relatives = new ArrayList<>();
+                        List<String> spouseNames = new ArrayList<>();
+                        
+                        for (Map<String, Object> associate : associatesList) {
+                            String name = (String) associate.get("name");
+                            String association = (String) associate.get("association");
+
+                            // Collect all relatives with formatted relation
+                            relatives.add(name + (association != null ? " (" + association + ")" : ""));
+                            
+                            // Collect only "spouse" names
+                            if ("spouse".equalsIgnoreCase(association)) {
+                                spouseNames.add(name);
+                            }
+                        }
+                        
+                        // Add lists to hit
+                        hit.put("relatives", relatives);
+                        hit.put("spouseNames", spouseNames);  // List of spouse names
+                    }
+
+
+                    
+                    if (fieldsObject instanceof Map) {
+                        Map<String, List<Map<String, Object>>> fields = (Map<String, List<Map<String, Object>>>) fieldsObject;
+                        
+                        // Check if "Gender" is present and extract the value
+                        List<Map<String, Object>> genderField = fields.get("Gender");
+                        if (genderField != null && !genderField.isEmpty()) {
+                            String gender = (String) genderField.get(0).get("value");
+                            hit.put("gender", gender);
+                            model.addAttribute("gender", gender); // Add gender to model if needed
+                        }
+                    }
+                    
                     System.out.println("countries : "+ countries );
                     hit.put("countries", countries);
+                    
+                    hit.put("name", hitData.getOrDefault("name", ""));
+                    hit.put("matchPercentage", ((Double) hitData.getOrDefault("score", 0.0)) * 100);
+
+                    List<String> alternativeNames = (List<String>) hitData.get("alternative_names");
+                    hit.put("alternativeNames", alternativeNames != null ? alternativeNames : new ArrayList<>());
+                    System.out.println("alternativeNames :"+alternativeNames);
                     
                     List<String> matchTypes = (List<String>) hitData.get("match_types");
                     if (matchTypes != null) {
                         hit.put("relevance", matchTypes);
                         System.out.println("relevance : " + matchTypes);
                     }
-
+ 
                     hits.add(hit);
                 }
                 model.addAttribute("hits", hits);
                 System.out.println("Hits: " + hits);
-
+                String hitsJson = new Gson().toJson(hits);
+                System.out.println("hitsJson: " + hitsJson); // Log to verify
+                model.addAttribute("hitsJson", hitsJson);
+ 
             }
-
+ 
         }
-
+ 
         // Add declined information to the model
         model.addAttribute("declinedReason", detailedResponse.get("declined_reason"));
         System.out.println("Declined Reason: " + detailedResponse.get("declined_reason"));
-
+ 
         model.addAttribute("declinedCodes", detailedResponse.get("declined_codes"));
         System.out.println("Declined Codes: " + detailedResponse.get("declined_codes"));
-
+ 
         // Add current date and time
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm:ss a");
-
+ 
         model.addAttribute("date", now.format(dateFormatter));
         model.addAttribute("time", now.format(timeFormatter));
         
@@ -398,12 +524,12 @@ public class AMLController {
             Map<String, Object> backgroundChecks = (Map<String, Object>) verificationData.get("background_checks");
             if (backgroundChecks != null) {
                 Map<String, Object> amlData = (Map<String, Object>) backgroundChecks.get("aml_data");
-
+ 
                 // Fetch categories and sources
                 List<Map<String, Object>> detailedChecks = (List<Map<String, Object>>) amlData.get("hits");
                 Set<String> sources = new HashSet<>();
                 Set<String> categories = new HashSet<>();
-
+ 
                 if (detailedChecks != null) {
                     for (Map<String, Object> hit : detailedChecks) {
                         // Add unique sources
@@ -411,7 +537,7 @@ public class AMLController {
                         if (hitSources != null) {
                             sources.addAll(hitSources);
                         }
-
+ 
                         // Extract categories from source details
                         List<Map<String, Object>> sourceDetails = (List<Map<String, Object>>) hit.get("source_details");
                         if (sourceDetails != null) {
@@ -425,10 +551,39 @@ public class AMLController {
                             }
                         }
                     }
+                    
+//                    Object sourceDetailsObj = hit.get("source_details");
+//                    List<String> countries = new ArrayList<>();
+//                    List<String> descriptions = new ArrayList<>();
+//
+//                    if (sourceDetailsObj instanceof List) {
+//                        List<Map<String, Object>> sourceDetails = (List<Map<String, Object>>) sourceDetailsObj;
+//                        for (Map<String, Object> detail : sourceDetails) {
+//                            // Extract countries
+//                            List<String> detailCountries = (List<String>) detail.get("countries");
+//                            if (detailCountries != null) {
+//                                countries.addAll(detailCountries);
+//                            }
+//                            
+//                            // Extract description
+//                            String description = (String) detail.get("description");
+//                            if (description != null) {
+//                                descriptions.add(description);
+//                            }
+//                        }
+//                    } else {
+//                        System.out.println("Expected 'source_details' to be a List, but found: " + sourceDetailsObj);
+//                    }
+//
+//                    // Add the extracted countries and descriptions to the hit map
+//                    hit.put("countries", countries);
+//                    hit.put("criminalCharge", descriptions);
                 }
-
+ 
                 model.addAttribute("sources", new ArrayList<>(sources));
+//                hit.put("sources", new ArrayList<>(sources));
                 model.addAttribute("categories", new ArrayList<>(categories));
+//                hit.put("categories", new ArrayList<>(categories));
                 System.out.println("Sources :");
                 System.out.println(sources);
                 System.out.println("Categories :");
@@ -440,145 +595,23 @@ public class AMLController {
     }
     
     
-//    @GetMapping("/detailedamldeclined")
-//    public String showDetailedDeclinedVerification(@RequestParam("reference") String reference, Model model) {
-//        Logger logger = LoggerFactory.getLogger(this.getClass());
-//        logger.info("Fetching detailed verification for reference: {}", reference);
-//
-//        // Fetch detailed response using the reference
-//        Map<String, Object> detailedResponse = fetchDetailedHitsFromShufti(reference);
-//        logger.debug("Fetched detailed response: {}", detailedResponse);
-//
-//        // Basic data
-//        model.addAttribute("reference", detailedResponse.get("reference"));
-//        model.addAttribute("event", detailedResponse.get("event"));
-//        model.addAttribute("country", detailedResponse.get("country"));
-//
-//        // Extract verification data
-//        Map<String, Object> verificationData = (Map<String, Object>) detailedResponse.get("verification_data");
-//        if (verificationData != null) {
-//            logger.info("Processing verification data.");
-//            Map<String, Object> backgroundChecks = (Map<String, Object>) verificationData.get("background_checks");
-//            if (backgroundChecks != null) {
-//                Map<String, Object> nameData = (Map<String, Object>) backgroundChecks.get("name");
-//                model.addAttribute("firstName", nameData.get("first_name"));
-//                model.addAttribute("lastName", nameData.get("last_name"));
-//                model.addAttribute("dob", backgroundChecks.get("dob"));
-//
-//                Map<String, Object> amlData = (Map<String, Object>) backgroundChecks.get("aml_data");
-//                List<Map<String, Object>> detailedChecks = (List<Map<String, Object>>) amlData.get("hits");
-//                model.addAttribute("detailedChecks", detailedChecks);
-//                logger.debug("Detailed checks: {}", detailedChecks);
-//
-//                List<Map<String, Object>> hits = new ArrayList<>();
-//                for (Map<String, Object> hitData : detailedChecks) {
-//                    Map<String, Object> hit = new HashMap<>();
-//                    hit.put("name", hitData.get("name"));
-//                    hit.put("matchPercentage", ((Double) hitData.get("score")) * 100);
-//                    hit.put("dob", backgroundChecks.get("dob"));
-//                    hit.put("appearsOn", hitData.get("types"));
-//
-//                    List<Map<String, Object>> sourceDetails = (List<Map<String, Object>>) hitData.get("source_details");
-//                    List<String> countries = new ArrayList<>();
-//                    if (sourceDetails != null) {
-//                        for (Map<String, Object> detail : sourceDetails) {
-//                            List<String> detailCountries = (List<String>) detail.get("countries");
-//                            if (detailCountries != null) {
-//                                countries.addAll(detailCountries);
-//                            }
-//                        }
-//                    }
-//                    hit.put("countries", countries);
-//
-//                    List<String> matchTypes = (List<String>) hitData.get("match_types");
-//                    if (matchTypes != null) {
-//                        hit.put("relevance", matchTypes);
-//                    }
-//                    hits.add(hit);
-//                }
-//                model.addAttribute("hits", hits);
-//                logger.info("Processed {} hits.", hits.size());
-//            }
-//        } else {
-//            logger.warn("No verification data found for reference: {}", reference);
-//        }
-//
-//        // Additional details
-//        model.addAttribute("declinedReason", detailedResponse.get("declined_reason"));
-//        model.addAttribute("declinedCodes", detailedResponse.get("declined_codes"));
-//
-//        LocalDateTime now = LocalDateTime.now();
-//        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-//        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm:ss a");
-//        model.addAttribute("date", now.format(dateFormatter));
-//        model.addAttribute("time", now.format(timeFormatter));
-//
-//        Map<String, Object> info = (Map<String, Object>) detailedResponse.get("info");
-//        if (info != null) {
-//            Map<String, Object> geolocation = (Map<String, Object>) info.get("geolocation");
-//            if (geolocation != null) {
-//                model.addAttribute("ip", geolocation.get("ip"));
-//                String location1 = (String) geolocation.get("city") + " " + geolocation.get("region_name");
-//                model.addAttribute("location", location1);
-//            }
-//            Map<String, Object> geolocationAgent = (Map<String, Object>) info.get("agent");
-//            if (geolocationAgent != null) {
-//                model.addAttribute("browser", geolocationAgent.get("browser_name"));
-//            }
-//        }
-//
-//        // Categories and Sources
-//        if (verificationData != null) {
-//            logger.info("Processing categories and sources.");
-//            Map<String, Object> backgroundChecks = (Map<String, Object>) verificationData.get("background_checks");
-//            if (backgroundChecks != null) {
-//                Map<String, Object> amlData = (Map<String, Object>) backgroundChecks.get("aml_data");
-//                List<Map<String, Object>> detailedChecks = (List<Map<String, Object>>) amlData.get("hits");
-//                Set<String> sources = new HashSet<>();
-//                Set<String> categories = new HashSet<>();
-//                if (detailedChecks != null) {
-//                    for (Map<String, Object> hit : detailedChecks) {
-//                        List<String> hitSources = (List<String>) hit.get("sources");
-//                        if (hitSources != null) {
-//                            sources.addAll(hitSources);
-//                        }
-//                        List<Map<String, Object>> sourceDetails = (List<Map<String, Object>>) hit.get("source_details");
-//                        if (sourceDetails != null) {
-//                            for (Map<String, Object> detail : sourceDetails) {
-//                                List<Map<String, String>> sourceCategories = (List<Map<String, String>>) detail.get("source_categories");
-//                                if (sourceCategories != null) {
-//                                    for (Map<String, String> category : sourceCategories) {
-//                                        categories.addAll(category.keySet());
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//                model.addAttribute("sources", new ArrayList<>(sources));
-//                model.addAttribute("categories", new ArrayList<>(categories));
-//                logger.info("Found {} sources and {} categories.", sources.size(), categories.size());
-//            }
-//        }
-//
-//        return "detailed-aml-declined";
-//    }
     
-    @GetMapping("/detailedamldeclined")
-    public String showDetailedDeclinedVerification(@RequestParam("reference") String reference, Model model) {
+    
+    @GetMapping("/detailedamldeclined1")
+    public String showDetailedDeclinedVerification1(@RequestParam("reference") String reference, Model model) {
         System.out.println("Fetching detailed verification for reference: " + reference);
-
+ 
         // Fetch detailed response using the reference
         Map<String, Object> detailedResponse = fetchDetailedHitsFromShufti(reference);
         System.out.println("Fetched detailed response: " + detailedResponse);
-
+ 
         // Check if the response contains the necessary data
         if (detailedResponse == null) {
             System.out.println("No data found for reference: " + reference);
             model.addAttribute("errorMessage", "No data found for the provided reference.");
             return "detailed-aml-declined"; // Return with an error message
         }
-
+ 
         // Populate basic data
         model.addAttribute("reference", detailedResponse.get("reference"));
         System.out.println("Rreference : "+reference);
@@ -588,14 +621,14 @@ public class AMLController {
         model.addAttribute("declinedReason", detailedResponse.get("declined_reason"));
         System.out.println("DdeclinedReason : "+detailedResponse.get("declined_reason"));
         model.addAttribute("declinedCodes", detailedResponse.get("declined_codes"));
-
+ 
         // Add current date and time
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm:ss a");
         model.addAttribute("date", now.format(dateFormatter));
         model.addAttribute("time", now.format(timeFormatter));
-
+ 
         // Extract verification data
         Map<String, Object> verificationData = (Map<String, Object>) detailedResponse.get("verification_data");
         if (verificationData != null) {
@@ -605,14 +638,14 @@ public class AMLController {
             	String dob = (String) backgroundChecks.get("dob");
                 model.addAttribute("dob", dob); // Add to model for JSP usage
                 System.out.println("DOB : "+dob);
-
+ 
                 // Extracting name
                 Map<String, Object> nameData = (Map<String, Object>) backgroundChecks.get("name");
                 if (nameData != null) {
                     String firstName = (String) nameData.get("first_name");
                     String middleName = (String) nameData.get("middle_name");
                     String lastName = (String) nameData.get("last_name");
-
+ 
                     model.addAttribute("firstName", firstName);
                     model.addAttribute("middleName", middleName);
                     model.addAttribute("lastName", lastName);
@@ -630,7 +663,7 @@ public class AMLController {
                             Map<String, Object> hit = new HashMap<>();
                             hit.put("name", hitData.getOrDefault("name", ""));
                             hit.put("matchPercentage", ((Double) hitData.getOrDefault("score", 0.0)) * 100);
-
+ 
                             List<String> alternativeNames = (List<String>) hitData.get("alternative_names");
                             hit.put("alternativeNames", alternativeNames != null ? alternativeNames : new ArrayList<>());
                             System.out.println("alternativeNames :"+alternativeNames);
@@ -638,46 +671,62 @@ public class AMLController {
                             Object fieldsObj = hitData.get("fields");
                             if (fieldsObj instanceof List) {
                                 List<Map<String, Object>> fieldsList = (List<Map<String, Object>>) fieldsObj;
-
-//                                Map<String, Object> fieldsMap = (Map<String, Object>) fieldsObj;
-//
-//                                // Use the new extraction method
-//                                String address = extractAddress(fieldsMap);
-//                                hit.put("address", address);
-//                                System.out.println("Address: " + address);
+                                System.out.println("FieldList : "+fieldsList);
                                 
                                 // Use the new extraction method
                                 hit.put("category", extractFieldValue(fieldsList, "Category"));
+                                System.out.println("category"+extractFieldValue(fieldsList, "Category"));
                                 hit.put("entityType", extractFieldValue(fieldsList, "Entity Type"));
+                                System.out.println("entityType : "+extractFieldValue(fieldsList, "Entity Type"));
                                 hit.put("gender", extractFieldValue(fieldsList, "Gender"));
+                                System.out.println("Gender : "+extractFieldValue(fieldsList, "Gender"));
                                 hit.put("nationality", extractFieldValue(fieldsList, "Nationality"));
+                                System.out.println("Nationality : "+extractFieldValue(fieldsList, "Nationality"));
                             } else {
                                 System.out.println("Expected 'fields' to be a List, but found: " + fieldsObj);
                             }
-
+ 
                             // Extract source details
                             Object sourceDetailsObj = hitData.get("source_details");
                             List<String> countries = new ArrayList<>();
+                            List<String> descriptions = new ArrayList<>();
+
                             if (sourceDetailsObj instanceof List) {
                                 List<Map<String, Object>> sourceDetails = (List<Map<String, Object>>) sourceDetailsObj;
                                 for (Map<String, Object> detail : sourceDetails) {
+                                    // Extract countries
                                     List<String> detailCountries = (List<String>) detail.get("countries");
                                     if (detailCountries != null) {
                                         countries.addAll(detailCountries);
+                                    }
+                                    
+                                    // Extract description
+                                    String description = (String) detail.get("description");
+                                    if (description != null) {
+                                        descriptions.add(description);
                                     }
                                 }
                             } else {
                                 System.out.println("Expected 'source_details' to be a List, but found: " + sourceDetailsObj);
                             }
+
+                            // Add the extracted countries and descriptions to the hit map
                             hit.put("countries", countries);
+                            hit.put("criminalCharge", descriptions);
 
                             // Extract match types
                             List<String> matchTypes = (List<String>) hitData.get("match_types");
                             hit.put("relevance", matchTypes != null ? matchTypes : new ArrayList<>());
-
+ 
                             hits.add(hit);
                         }
                         model.addAttribute("hits", hits);
+                        String hitsJson = new Gson().toJson(hits);
+                        System.out.println("hitsJson: " + hitsJson); // Log to verify
+                        model.addAttribute("hitsJson", hitsJson);
+ 
+                       // model.addAttribute("hitsJson", new Gson().toJson(hits)); // Use Gson or similar library to convert to JSON
+ 
                         System.out.println("Processed " + hits.size() + " hits.");
                     } else {
                         System.out.println("No detailed checks found.");
@@ -691,7 +740,7 @@ public class AMLController {
         } else {
             System.out.println("verificationData is null.");
         }
-
+ 
         // Populate additional details like geolocation and agent info
         Map<String, Object> info = (Map<String, Object>) detailedResponse.get("info");
         if (info != null) {
@@ -701,16 +750,16 @@ public class AMLController {
                 String location = geolocation.getOrDefault("city", "") + " " + geolocation.getOrDefault("region_name", "");
                 model.addAttribute("location", location);
             }
-
+ 
             Map<String, Object> geolocationAgent = (Map<String, Object>) info.get("agent");
             if (geolocationAgent != null) {
                 model.addAttribute("browser", geolocationAgent.getOrDefault("browser_name", ""));
             }
         }
-
+ 
         return "detailed-aml-declined"; // Ensure this matches your JSP name
     }
-
+ 
     // Modified extractFieldValue method to handle List of Maps
     private String extractFieldValue(List<Map<String, Object>> fieldsList, String key) {
         for (Map<String, Object> field : fieldsList) {
@@ -721,7 +770,7 @@ public class AMLController {
         return "";
     }
     
- // Method to extract address from fields
+// Method to extract address from fields
     private String extractAddress(Map<String, Object> fields) {
         // Check if "Address" exists in the fields
         if (fields.containsKey("Address")) {
@@ -740,6 +789,34 @@ public class AMLController {
         }
         return ""; // Return empty string if address is not found
     }
+
+    
+//    private List<Country> getCountries() {
+//        // Replace this with actual logic to retrieve country data, e.g., from a database or API
+//        return List.of(
+//            new Country("US", "United States"),
+//            new Country("CA", "Canada"),
+//            new Country("GB", "United Kingdom")
+//            // Add more countries as needed
+//        );
+//    }
+
+    @GetMapping("/configureFilter")
+    public String configureFilter(Model model) {
+//        List<Country> countries = getCountries();
+
+        // Convert the list of countries to JSON format
+//        String countriesJson = new Gson().toJson(countries);
+        
+        // Add the JSON data as a model attribute for the JSP
+//        model.addAttribute("countriesJson", countriesJson);
+        
+    	System.out.println("Logger1");
+        return "configure"; // Name of the JSP page (configure.jsp)
+    }
+
+
+
 
 
 
