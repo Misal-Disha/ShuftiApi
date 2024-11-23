@@ -4,15 +4,20 @@ package com.example.aml_integration.service;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
+import java.io.*;
 
 @Service
 public class AMLService {
@@ -23,7 +28,7 @@ public class AMLService {
 		this.restTemplate = restTemplate;
 	}
 
-	public String performAMLCheck() throws Exception {
+	public String performAMLCheck(String firstName, String middleName, String lastName, String dob, List<String> filters, List<String> countries, Integer matchScore) throws Exception {
 	    String url = "https://api.shuftipro.com/";
 	    String CLIENT_ID = "8dfed603060c6178da6e2e942a234ddb2197fe85b5bdcf860387cb82f6d76189";
 	    String SECRET_KEY = "6RsGbP8O3gpYEdvcuJcZGmQS2Vf6mhMp";
@@ -36,29 +41,38 @@ public class AMLService {
 	    String basicAuth = "Basic " + Base64.getEncoder().encodeToString((CLIENT_ID + ":" + SECRET_KEY).getBytes(StandardCharsets.UTF_8));
 	    con.setRequestProperty("Authorization", basicAuth);
 
-	    String payload = "{"
-	            + "\"reference\": \"SP_REQUEST_" + (int)(Math.random() * 10000) + "\","
-	            + "\"callback_url\": \"https://Devshuftipro.flairminds.com/api/aml/callback\"," 
-	            + "\"redirect_url\": \"https://Devshuftipro.flairminds.com/api/aml/redirect\","  
-//	            + "\"country\": \"GB\","
-	            + "\"language\": \"EN\","
-	            + "\"verification_mode\": \"any\","
-	            + "\"ttl\": 60,"
-	            + "\"background_checks\": {"
-	            + "    \"alias_search\": \"0\","
-	            + "    \"rca_search\": \"0\","
-	            + "    \"match_score\": 75,"
-	            + "    \"name\": {"
-	            + "        \"first_name\": \"Nirav\","
-	            + "        \"middle_name\": \"\","
-	            + "        \"last_name\": \"Modi\""
-	            + "    },"
-	            + "    \"dob\": \"1996-11-09\","
-	            + "    \"filters\": [\"sanction\", \"fitness-probity\", \"warning\", \"pep\",\"pep-class-1\",\"pep-class-2\",\"pep-class-3\",\"pep-class-4\"]"
-	            + "}"
-	            + "}";
-	    
-	 // Send post request
+	    // Build the dynamic JSON payload
+	    Map<String, Object> payloadMap = new HashMap<>();
+	    payloadMap.put("reference", "SP_REQUEST_" + (int) (Math.random() * 10000));
+	    payloadMap.put("callback_url", "https://Devshuftipro.flairminds.com/api/aml/callback");
+	    payloadMap.put("redirect_url", "https://Devshuftipro.flairminds.com/api/aml/redirect");
+	    payloadMap.put("language", "EN");
+	    payloadMap.put("verification_mode", "any");
+	    payloadMap.put("ttl", 60);
+
+	    Map<String, Object> backgroundChecks = new HashMap<>();
+	    backgroundChecks.put("alias_search", "0");
+	    backgroundChecks.put("rca_search", "0");
+	    backgroundChecks.put("match_score", matchScore != null ? matchScore : 75);  // Use passed matchScore or default to 75
+
+	    Map<String, Object> nameData = new HashMap<>();
+	    nameData.put("first_name", firstName);
+	    nameData.put("middle_name", middleName);
+	    nameData.put("last_name", lastName);
+	    backgroundChecks.put("name", nameData);
+	    backgroundChecks.put("dob", dob);
+	    backgroundChecks.put("filters", filters);
+	    backgroundChecks.put("country", countries);  // Add countries to the payload
+
+	    payloadMap.put("background_checks", backgroundChecks);
+	    System.out.println("************************************************************************************************");
+	    System.out.println("Payload Map : "+ payloadMap);
+
+	    // Convert payload to JSON
+	    ObjectMapper objectMapper = new ObjectMapper();
+	    String payload = objectMapper.writeValueAsString(payloadMap);
+
+	    // Send post request
 	    con.setDoOutput(true);
 	    try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
 	        wr.writeBytes(payload);
@@ -94,72 +108,6 @@ public class AMLService {
 
 	    // Return the response
 	    return response.toString();
-	    
-	    
-//	    StringBuilder payload = new StringBuilder();
-//	    payload.append("{")
-//	           .append("\"reference\": \"SP_REQUEST_").append((int)(Math.random() * 10000)).append("\",")
-//	           .append("\"callback_url\": \"https://Devshuftipro.flairminds.com/api/aml/callback\",")
-//	           .append("\"redirect_url\": \"https://Devshuftipro.flairminds.com/api/aml/redirect\",")
-//	           .append("\"language\": \"EN\",")
-//	           .append("\"verification_mode\": \"any\",")
-//	           .append("\"ttl\": 60,");
-//
-//	    // Background checks
-//	    payload.append("\"background_checks\": {")
-//	           .append("\"alias_search\": \"")
-//	           .append("\"rca_search\": \"")
-//	           .append("\"match_score\": 75")
-//	           .append("\"name\": {")
-//	           .append("\"first_name\": \"Nirav\",")
-//	           .append("\"middle_name\": \"\",")
-//	           .append("\"last_name\": \"Modi\"")
-//	           .append("},") 
-//	           .append("\"dob\": \"1996-11-09\",");
-//
-//	    // Construct the filters array
-//	    payload.append("\"filters\": [");
-//	    for (int i = 0; i < filters.size(); i++) {
-//	        payload.append("\"").append(filters.get(i)).append("\"");
-//	        if (i < filters.size() - 1) payload.append(",");
-//	    }
-//	    payload.append("]");
-//
-//	    payload.append("}}");
-//
-//	    con.setDoOutput(true);
-//	    try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
-//	        wr.writeBytes(payload.toString());
-//	        wr.flush();
-//	    }
-//	    
-//	 // Handle the response
-//	    int responseCode = con.getResponseCode();
-//	    System.out.println("\nSending 'POST' request to URL : " + url);
-//	    System.out.println("Payload : " + payload);
-//	    System.out.println("Response Code : " + responseCode);
-//
-//	    if (responseCode != 200) {
-//	        BufferedReader errorIn = new BufferedReader(new InputStreamReader(con.getErrorStream()));
-//	        String inputLine;
-//	        StringBuilder errorResponse = new StringBuilder();
-//	        while ((inputLine = errorIn.readLine()) != null) {
-//	            errorResponse.append(inputLine);
-//	        }
-//	        errorIn.close();
-//	        throw new Exception("Error response from server: " + errorResponse.toString());
-//	    }
-//
-//	    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-//	    String inputLine;
-//	    StringBuilder response = new StringBuilder();
-//	    while ((inputLine = in.readLine()) != null) {
-//	        response.append(inputLine);
-//	    }
-//	    in.close();
-//
-//	    return response.toString();
-
 	}
 
 }

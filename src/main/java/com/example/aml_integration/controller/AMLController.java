@@ -1,6 +1,5 @@
 package com.example.aml_integration.controller;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,12 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,7 +33,7 @@ import com.example.aml_integration.service.AMLService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
-@Controller  // Change from @RestController to @Controller
+@Controller
 @RequestMapping("/api/aml")
 public class AMLController {
 
@@ -52,15 +45,50 @@ public class AMLController {
         this.amlService = amlService;
     }
     
+    @GetMapping("/aml-form")
+    public String showAmlCheckForm() {
+    	System.out.println("Testing...");
+        return "amlCheckForm";  
+    }
     
     @PostMapping("/check")
-    public ResponseEntity<String> performAMLCheck(@RequestBody String requestData) throws Exception {
+    public ResponseEntity<String> performAMLCheck(@RequestBody Map<String, Object> requestData) throws Exception {
+        try {
     	System.out.println("AML check request received: " + requestData);
+
+        // Extract required fields from requestData and validate
+        String firstName = (String) requestData.get("firstName");
+        String middleName = (String) requestData.getOrDefault("middleName", ""); // Optional
+        String lastName = (String) requestData.get("lastName");
+        String dob = (String) requestData.get("dob");
+        List<String> filters = (List<String>) requestData.get("filters");
+        List<String> countries = (List<String>) requestData.get("countries"); // New field
+//        Integer matchScore = Integer.parseInt((String) requestData.get("matchScore"));
         
-        // Call the AML check service (assuming this method returns the response as a String)
-        String result = amlService.performAMLCheck();
+        Integer matchScore = 75; // default value
+        String matchScoreStr = (String) requestData.get("matchScore");
+
+        if (matchScoreStr != null && !matchScoreStr.isEmpty()) {
+            matchScore = Integer.parseInt(matchScoreStr);
+        }
+
+
+        if (firstName == null || lastName == null || dob == null || filters == null || filters.isEmpty()) {
+            return ResponseEntity.badRequest().body("Required fields are missing or invalid. Make sure to include firstName, lastName, dob, and at least one filter.");
+        }
+
+        // Ensure countries and matchScore are optional fields, so they don't invalidate the request
+        if (countries == null) {
+            countries = Collections.emptyList();
+        }
+//        if (matchScore == null) {
+//            matchScore = 75; // Default match score if not provided
+//        }
+
+        // Call the AML check service, passing dynamic data
+        String result = amlService.performAMLCheck(firstName, middleName, lastName, dob, filters, countries, matchScore);
         System.out.println("AML check result: " + result);
-        
+
         // Parse the result as a JSON object
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Object> resultMap = objectMapper.readValue(result, Map.class);
@@ -78,7 +106,7 @@ public class AMLController {
             responseMap.put("status", "Passed");
             responseMap.put("data", "AML check was successful!");
 
-            // Optional: Add other details like name, dob, etc., if needed
+            // Extract additional details if available
             Map<String, Object> verificationData = (Map<String, Object>) resultMap.get("verification_data");
             if (verificationData != null) {
                 Map<String, Object> backgroundChecks = (Map<String, Object>) verificationData.get("background_checks");
@@ -91,24 +119,22 @@ public class AMLController {
                     responseMap.put("dob", backgroundChecks.get("dob"));
                 }
             }
-            
         } else if ("verification.declined".equals(event)) {
             responseMap.put("status", "Failed");
             responseMap.put("data", "AML check failed.");
-            
+
             // Add the declined reason and codes to the response
-            String declinedReason = (String) resultMap.get("declined_reason");
-            List<String> declinedCodes = (List<String>) resultMap.get("declined_codes");
-            
-            responseMap.put("declined_reason", declinedReason);
-            responseMap.put("declined_codes", declinedCodes);
+            responseMap.put("declined_reason", resultMap.get("declined_reason"));
+            responseMap.put("declined_codes", resultMap.get("declined_codes"));
         }
 
         // Convert the response map to JSON and return
         String jsonResponse = objectMapper.writeValueAsString(responseMap);
         return ResponseEntity.ok(jsonResponse);
+        }catch(Exception e) {
+        	return ResponseEntity.ok("amlRetryPage");
+        }
     }
-
     
     @PostMapping("/callback")
     public ResponseEntity<Map<String, Object>> handleCallback(@RequestBody Map<String, Object> requestData) {
@@ -122,8 +148,6 @@ public class AMLController {
 
         // Fetch detailed response from ShuftiPro API using the reference
         Map<String, Object> detailedResponse = fetchDetailedHitsFromShufti(reference);
-//        System.out.println("Detailed response with status API:");
-//        System.out.println(detailedResponse);
 
         // Extract data from detailedResponse
         String event = (String) detailedResponse.get("event");
@@ -188,17 +212,12 @@ public class AMLController {
 
         }
 
-//         Regular handling for other cases (verification accepted or other events)
-//        responseData.put("reference", reference);
-//        responseData.put("event", event);
-
         System.out.println(responseData);
+        
         // Return the entire responseData map as JSON in the response
         return ResponseEntity.ok(responseData);
     }
 
-
-    
     private Map<String, Object> fetchDetailedHitsFromShufti(String reference) {
         // Create an HTTP request to fetch detailed data using the reference from the callback
         String url = "https://api.shuftipro.com/status";  // Example API URL
@@ -210,8 +229,6 @@ public class AMLController {
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
 
-//        System.out.println("111");
-//        System.out.println(response);
         return response.getBody();
     }
 
@@ -224,7 +241,7 @@ public class AMLController {
     
     @GetMapping("/amlCheckPage")
     public String getAmlCheckPage() {
-        return "amlCheck";  // Return the JSP page name without .jsp extension
+        return "amlCheck";
     }
     
     @RequestMapping("/welcome")
@@ -235,63 +252,67 @@ public class AMLController {
     
     @GetMapping("/result")
     public String showAMLResultPage(@RequestParam("reference") String reference, Model model) {
-        // Fetch detailed response using the reference
-        Map<String, Object> detailedResponse = fetchDetailedHitsFromShufti(reference);
-
-        // Add basic info to the model
-        model.addAttribute("reference", detailedResponse.get("reference"));
-        model.addAttribute("browserInfo", detailedResponse.get("info.agent.useragent"));
-
-        // Get the user's name
-        Map<String, Object> nameData = (Map<String, Object>) ((Map<String, Object>) detailedResponse.get("verification_data"))
-                .get("background_checks");
-        Map<String, Object> name = (Map<String, Object>) nameData.get("name");
-        
-        model.addAttribute("firstName", name.get("first_name"));
-        model.addAttribute("lastName", name.get("last_name"));
-        model.addAttribute("dob", nameData.get("dob"));
-
-        // Extract filters for verification
-        List<String> filters = (List<String>) ((Map<String, Object>) nameData.get("aml_data")).get("filters");
-        model.addAttribute("filters", filters);
-        System.out.println("Testing 1");
-        System.out.println(filters);
-
-        // Add match score (assuming it's in "verification_result.background_checks")
-        Map<String, Object> verificationResult = (Map<String, Object>) detailedResponse.get("verification_result");
-        Integer matchScore = (Integer) verificationResult.get("background_checks");
-        model.addAttribute("matchScore", matchScore != null ? matchScore : 0); // Default to 0 if null
-        System.out.println("Match score : " + matchScore);
-        
-        Map<String, Object> info = (Map<String, Object>) detailedResponse.get("info");
-        if (info != null) {
-            Map<String, Object> geolocation = (Map<String, Object>) info.get("geolocation");
-            if (geolocation != null) {
-                String ip = (String) geolocation.get("ip");
-                model.addAttribute("ip", ip);
-                System.out.println("IP: " + ip);
-                
-                String location1 = (String) geolocation.get("city") + " " + geolocation.get("region_name");
-                model.addAttribute("location", location1);
-                System.out.println("Location: " + location1);
-            }
-        }
-        
-        String country1="";
-        model.addAttribute("country", detailedResponse.get("country") != null ? country1 : "N/A");
-        
-
-        // Get the current date
-        String currentDate = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a").format(new Date());
-        model.addAttribute("currentDate", currentDate);
-
-        return "resultpage"; // Name of the JSP page
+    	try {
+	        // Fetch detailed response using the reference
+	        Map<String, Object> detailedResponse = fetchDetailedHitsFromShufti(reference);
+	
+	        // Add basic info to the model
+	        model.addAttribute("reference", detailedResponse.get("reference"));
+	        model.addAttribute("browserInfo", detailedResponse.get("info.agent.useragent"));
+	
+	        // Get the user's name
+	        Map<String, Object> nameData = (Map<String, Object>) ((Map<String, Object>) detailedResponse.get("verification_data"))
+	                .get("background_checks");
+	        Map<String, Object> name = (Map<String, Object>) nameData.get("name");
+	        
+	        model.addAttribute("firstName", name.get("first_name"));
+	        model.addAttribute("lastName", name.get("last_name"));
+	        model.addAttribute("dob", nameData.get("dob"));
+	
+	        // Extract filters for verification
+	        List<String> filters = (List<String>) ((Map<String, Object>) nameData.get("aml_data")).get("filters");
+	        model.addAttribute("filters", filters);
+	        System.out.println("Testing 1");
+	        System.out.println(filters);
+	
+	        // Add match score (assuming it's in "verification_result.background_checks")
+	        Map<String, Object> verificationResult = (Map<String, Object>) detailedResponse.get("verification_result");
+	        Integer matchScore = (Integer) verificationResult.get("background_checks");
+	        model.addAttribute("matchScore", matchScore != null ? matchScore : 0); // Default to 0 if null
+	        System.out.println("Match score : " + matchScore);
+	        
+	        Map<String, Object> info = (Map<String, Object>) detailedResponse.get("info");
+	        if (info != null) {
+	            Map<String, Object> geolocation = (Map<String, Object>) info.get("geolocation");
+	            if (geolocation != null) {
+	                String ip = (String) geolocation.get("ip");
+	                model.addAttribute("ip", ip);
+	                System.out.println("IP: " + ip);
+	                
+	                String location1 = (String) geolocation.get("city") + " " + geolocation.get("region_name");
+	                model.addAttribute("location", location1);
+	                System.out.println("Location: " + location1);
+	            }
+	        }
+	        
+	        String country1="";
+	        model.addAttribute("country", detailedResponse.get("country") != null ? country1 : "N/A");
+	        
+	
+	        // Get the current date
+	        String currentDate = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a").format(new Date());
+	        model.addAttribute("currentDate", currentDate);
+	
+	        return "resultpage";
+    	} 
+    	catch(Exception e){
+    		return "amlRetryPage";
+    	}
     }
 
-
-    
     @GetMapping("/amldeclined")
     public String showDeclinedVerification(@RequestParam("reference") String reference, Model model) {
+    	try {
         // Fetch detailed response using the reference
         Map<String, Object> detailedResponse = fetchDetailedHitsFromShufti(reference);
  
@@ -333,7 +354,8 @@ public class AMLController {
                 for (Map<String, Object> hitData : detailedChecks) {
                 	Map<String, Object> hit = new HashMap<>();
                     hit.put("name", hitData.get("name"));
-                    hit.put("matchPercentage", ((Double) hitData.get("score")) * 100);
+//                    hit.put("matchPercentage", ((Double) hitData.get("score")) * 100);
+                    hit.put("matchPercentage", ((Number) hitData.get("score")).doubleValue() * 100);
                     hit.put("dob", backgroundChecks.get("dob"));
                     hit.put("appearsOn", hitData.get("types"));
                     hit.put("entityType", hitData.get("entity_type"));
@@ -459,7 +481,8 @@ public class AMLController {
                     hit.put("countries", countries);
                     
                     hit.put("name", hitData.getOrDefault("name", ""));
-                    hit.put("matchPercentage", ((Double) hitData.getOrDefault("score", 0.0)) * 100);
+//                    hit.put("matchPercentage", ((Double) hitData.getOrDefault("score", 0.0)) * 100);
+                    hit.put("matchPercentage", ((Number) hitData.getOrDefault("score",0.0)).doubleValue() * 100);
 
                     List<String> alternativeNames = (List<String>) hitData.get("alternative_names");
                     hit.put("alternativeNames", alternativeNames != null ? alternativeNames : new ArrayList<>());
@@ -552,32 +575,6 @@ public class AMLController {
                         }
                     }
                     
-//                    Object sourceDetailsObj = hit.get("source_details");
-//                    List<String> countries = new ArrayList<>();
-//                    List<String> descriptions = new ArrayList<>();
-//
-//                    if (sourceDetailsObj instanceof List) {
-//                        List<Map<String, Object>> sourceDetails = (List<Map<String, Object>>) sourceDetailsObj;
-//                        for (Map<String, Object> detail : sourceDetails) {
-//                            // Extract countries
-//                            List<String> detailCountries = (List<String>) detail.get("countries");
-//                            if (detailCountries != null) {
-//                                countries.addAll(detailCountries);
-//                            }
-//                            
-//                            // Extract description
-//                            String description = (String) detail.get("description");
-//                            if (description != null) {
-//                                descriptions.add(description);
-//                            }
-//                        }
-//                    } else {
-//                        System.out.println("Expected 'source_details' to be a List, but found: " + sourceDetailsObj);
-//                    }
-//
-//                    // Add the extracted countries and descriptions to the hit map
-//                    hit.put("countries", countries);
-//                    hit.put("criminalCharge", descriptions);
                 }
  
                 model.addAttribute("sources", new ArrayList<>(sources));
@@ -591,11 +588,12 @@ public class AMLController {
             }
         }
         
-        return "aml-declined"; // Name of the JSP page
+        return "aml-declined";
+    	}
+    	catch(Exception e){
+    		return "amlRetryPage";
+    	}
     }
-    
-    
-    
     
     @GetMapping("/detailedamldeclined1")
     public String showDetailedDeclinedVerification1(@RequestParam("reference") String reference, Model model) {
@@ -662,7 +660,9 @@ public class AMLController {
                         for (Map<String, Object> hitData : detailedChecks) {
                             Map<String, Object> hit = new HashMap<>();
                             hit.put("name", hitData.getOrDefault("name", ""));
-                            hit.put("matchPercentage", ((Double) hitData.getOrDefault("score", 0.0)) * 100);
+//                            hit.put("matchPercentage", ((Double) hitData.getOrDefault("score", 0.0)) * 100);
+                            hit.put("matchPercentage", ((Number) hitData.getOrDefault("score", 0.0)).doubleValue() * 100);
+
  
                             List<String> alternativeNames = (List<String>) hitData.get("alternative_names");
                             hit.put("alternativeNames", alternativeNames != null ? alternativeNames : new ArrayList<>());
@@ -791,28 +791,11 @@ public class AMLController {
     }
 
     
-//    private List<Country> getCountries() {
-//        // Replace this with actual logic to retrieve country data, e.g., from a database or API
-//        return List.of(
-//            new Country("US", "United States"),
-//            new Country("CA", "Canada"),
-//            new Country("GB", "United Kingdom")
-//            // Add more countries as needed
-//        );
-//    }
-
     @GetMapping("/configureFilter")
     public String configureFilter(Model model) {
-//        List<Country> countries = getCountries();
 
-        // Convert the list of countries to JSON format
-//        String countriesJson = new Gson().toJson(countries);
-        
-        // Add the JSON data as a model attribute for the JSP
-//        model.addAttribute("countriesJson", countriesJson);
-        
     	System.out.println("Logger1");
-        return "configure"; // Name of the JSP page (configure.jsp)
+        return "configure"; 
     }
 
 
